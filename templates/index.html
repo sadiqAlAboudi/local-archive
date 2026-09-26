@@ -44,15 +44,26 @@
           </button>
         </li>
         <li>
-          <a href="/api/backup" value="backup" download title="تحميل نسخة احتياطية من قاعدة البيانات">
+          <a href="/api/backup" value="backup" download title="تحميل نسخة احتياطية شاملة (قاعدة البيانات والملفات المرفقة)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
               stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
-            نسخ احتياطي لقاعدة البيانات
+            نسخ احتياطي شامل
           </a>
+        </li>
+        <li>
+          <button type="button" value="restore" title="استعادة نسخة احتياطية (قاعدة البيانات والملفات)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            استعادة نسخة احتياطية
+          </button>
         </li>
         <li>
           <a href="/change-credentials" value="change-pwd" title="تغيير اسم المستخدم وكلمة المرور">
@@ -80,6 +91,28 @@
   </header>
 
   <main>
+    {{if .RestoreSuccess}}
+    <aside role="status">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+        stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>
+      <span>تمت استعادة النسخة الاحتياطية بنجاح وتحديث كافة البيانات والملفات بالأرشيف.</span>
+    </aside>
+    {{end}}
+
+    {{if .RestoreError}}
+    <aside role="alert">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+        stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <span>خطأ في عملية الاستعادة: {{.RestoreError}}</span>
+    </aside>
+    {{end}}
     <!-- الإحصائيات -->
     <section aria-label="Archive Statistics">
       <article>
@@ -95,6 +128,36 @@
         <header>
           <h3>إجمالي الوثائق</h3>
           <p>{{.TotalDocs}}</p>
+        </header>
+      </article>
+
+      <article>
+        <figure>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          </svg>
+        </figure>
+        <header>
+          <h3>الكتب الواردة</h3>
+          <p>{{.TotalIncoming}}</p>
+        </header>
+      </article>
+
+      <article>
+        <figure>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          </svg>
+        </figure>
+        <header>
+          <h3>الكتب الصادرة</h3>
+          <p>{{.TotalOutgoing}}</p>
         </header>
       </article>
 
@@ -118,7 +181,22 @@
 
     <!-- شريط البحث والتصفية المتقدمة -->
     <section role="search">
+      <!-- أزرار التصفية السريعة حسب نوع الوثيقة -->
+      <nav data-filter="doc-type" aria-label="تصفية نوع الوثيقة">
+        <a href="/?type=all{{if .Query}}&q={{.Query}}{{end}}" {{if or (eq .FilterType "all") (eq .FilterType "")}}aria-current="page"{{end}}>
+          جميع الوثائق ({{.TotalDocs}})
+        </a>
+        <a href="/?type=incoming{{if .Query}}&q={{.Query}}{{end}}" {{if eq .FilterType "incoming"}}aria-current="page"{{end}}>
+          الكتب الواردة ({{.TotalIncoming}})
+        </a>
+        <a href="/?type=outgoing{{if .Query}}&q={{.Query}}{{end}}" {{if eq .FilterType "outgoing"}}aria-current="page"{{end}}>
+          الكتب الصادرة ({{.TotalOutgoing}})
+        </a>
+      </nav>
+
       <form action="/" method="GET" role="search">
+        <input type="hidden" name="type" value="{{.FilterType}}">
+
         <fieldset>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
             stroke-linejoin="round">
@@ -126,11 +204,11 @@
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
           <input type="search" name="q" value="{{.Query}}"
-            placeholder="بحث سريع بكلمة أو عدة كلمات (مثال: التربية 2026 أو 101 نقل)...">
+            placeholder="بحث سريع بكلمة أو عدة كلمات (رقم التسلسل، العدد، الدائرة، الموضوع)...">
         </fieldset>
         <button type="submit">بحث</button>
         {{if .HasFilter}}
-        <a href="/">إلغاء التصفية</a>
+        <a href="/" value="reset-filter">إلغاء التصفية</a>
         {{end}}
 
         <details {{if or .FilterSerial .FilterDept .FilterLetter .FilterDate .FilterSubject}}open{{end}}>
@@ -143,15 +221,15 @@
 
           <fieldset>
             <label>
-              رقم التسلسل
-              <input type="text" name="serial" value="{{.FilterSerial}}" placeholder="مثال: 101">
+              رقم التسلسل أو العدد
+              <input type="text" name="serial" value="{{.FilterSerial}}" placeholder="مثال: 101 أو 540">
             </label>
             <label>
-              اسم الدائرة
+              اسم الدائرة / الجهة
               <input type="text" name="dept" value="{{.FilterDept}}" placeholder="مثال: وزارة التربية">
             </label>
             <label>
-              رقم الكتاب
+              رقم الكتاب (للوارد)
               <input type="text" name="letterno" value="{{.FilterLetter}}" placeholder="مثال: 4589">
             </label>
             <label>
@@ -192,11 +270,11 @@
       <table>
         <thead>
           <tr>
-            <th>رقم التسلسل</th>
+            <th>نوع الوثيقة</th>
+            <th>رقم التسلسل / العدد</th>
             <th>التاريخ</th>
-            <th>اسم الدائرة</th>
-            <th>رقم الكتاب</th>
-            <th>تاريخ الكتاب</th>
+            <th>اسم الدائرة / الجهة</th>
+            <th>رقم وتاريخ الكتاب</th>
             <th>الموضوع</th>
             <th>نوع الملف</th>
             <th>الإجراءات</th>
@@ -205,11 +283,20 @@
         <tbody>
           {{range .Documents}}
           <tr>
-            <td><strong>{{.SerialNumber}}</strong></td>
+            <td>
+              <mark value="{{.DocType}}">{{.DocTypeArabic}}</mark>
+            </td>
+            <td><strong>{{.ReferenceNumber}}</strong></td>
             <td><time datetime="{{.DocDate}}">{{.DocDate}}</time></td>
             <td>{{.Department}}</td>
-            <td>{{.LetterNumber}}</td>
-            <td><time datetime="{{.LetterDate}}">{{.LetterDate}}</time></td>
+            <td>
+              {{if eq .DocType "incoming"}}
+                {{.LetterNumber}}
+                {{if .LetterDate}}<br><time datetime="{{.LetterDate}}"><small>{{.LetterDate}}</small></time>{{end}}
+              {{else}}
+                —
+              {{end}}
+            </td>
             <td>
               <a href="/view?id={{.ID}}" value="title-link">
                 {{.Subject}}
@@ -247,8 +334,9 @@
                 </li>
                 <li>
                   <button type="button" value="edit" title="تعديل البيانات" data-id="{{.ID}}"
-                    data-serial="{{.SerialNumber}}" data-docdate="{{.DocDate}}" data-dept="{{.Department}}"
-                    data-letterno="{{.LetterNumber}}" data-letterdate="{{.LetterDate}}" data-subject="{{.Subject}}">
+                    data-type="{{.DocType}}" data-serial="{{.SerialNumber}}" data-issue="{{.IssueNumber}}"
+                    data-docdate="{{.DocDate}}" data-dept="{{.Department}}" data-letterno="{{.LetterNumber}}"
+                    data-letterdate="{{.LetterDate}}" data-subject="{{.Subject}}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                       stroke-linejoin="round">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -286,43 +374,71 @@
   <dialog id="add-dialog">
     <form method="POST" action="/api/documents" enctype="multipart/form-data">
       <header>
-        <h3>إضافة وثيقة جديدة</h3>
+        <h3>إضافة وثيقة جديدة للأرشيف</h3>
         <button type="button" value="cancel" title="إغلاق">&times;</button>
       </header>
 
+      <fieldset data-selector="doc-type">
+        <legend>نوع الوثيقة *</legend>
+        <div>
+          <label>
+            <input type="radio" name="doc_type" value="incoming" checked>
+            <span>كتاب وارد</span>
+          </label>
+          <label>
+            <input type="radio" name="doc_type" value="outgoing">
+            <span>كتاب صادر</span>
+          </label>
+        </div>
+      </fieldset>
+
       <fieldset>
-        <label>
+        <!-- حقول خاصة بالكتاب الوارد -->
+        <label data-field="serial_number">
           رقم التسلسل *
           <input type="text" name="serial_number" required placeholder="مثال: 101 أو 2026/15">
         </label>
 
-        <label>
-          التاريخ *
+        <!-- حقل خاص بالكتاب الصادر -->
+        <label data-field="issue_number" hidden>
+          العدد *
+          <input type="text" name="issue_number" placeholder="مثال: 742 أو 1205/ص">
+        </label>
+
+        <!-- تاريخ الوثيقة المشترك -->
+        <label data-field="doc_date">
+          <span data-label-incoming>تاريخ التسجيل *</span>
+          <span data-label-outgoing hidden>تاريخ الصدور *</span>
           <input type="date" name="doc_date" required>
         </label>
 
-        <label>
-          اسم الدائرة *
+        <!-- اسم الدائرة أو الجهة -->
+        <label data-field="department">
+          <span data-label-incoming>اسم الدائرة (الجهة الوارد منها) *</span>
+          <span data-label-outgoing hidden>الجهة الصادر إليها (اسم الدائرة) *</span>
           <input type="text" name="department" required
             placeholder="مثال: وزارة التربية والتعليم / دائرة الشؤون الإدارية">
         </label>
 
-        <label>
-          رقم الكتاب *
+        <!-- رقم وتاريخ كتاب الجهة للوارد فقط -->
+        <label data-field="letter_number">
+          رقم كتاب الجهة *
           <input type="text" name="letter_number" required placeholder="مثال: 4589/ب">
         </label>
 
-        <label>
-          تاريخ الكتاب *
+        <label data-field="letter_date">
+          تاريخ كتاب الجهة *
           <input type="date" name="letter_date" required>
         </label>
 
-        <label>
+        <!-- الموضوع -->
+        <label data-field="subject">
           الموضوع *
           <textarea name="subject" rows="3" required placeholder="موضوع الكتاب أو تفاصيل الوثيقة..."></textarea>
         </label>
 
-        <label>
+        <!-- الملف المرفق -->
+        <label data-field="file">
           الملف المرفق *
           <span>ملف PDF أو صورة (JPG, PNG, WEBP)</span>
           <input type="file" name="file" accept=".pdf,image/*" required>
@@ -346,33 +462,56 @@
 
       <input type="hidden" name="id">
 
+      <fieldset data-selector="doc-type">
+        <legend>نوع الوثيقة *</legend>
+        <div>
+          <label>
+            <input type="radio" name="doc_type" value="incoming">
+            <span>كتاب وارد</span>
+          </label>
+          <label>
+            <input type="radio" name="doc_type" value="outgoing">
+            <span>كتاب صادر</span>
+          </label>
+        </div>
+      </fieldset>
+
       <fieldset>
-        <label>
+        <!-- حقل رقم التسلسل للوارد -->
+        <label data-field="serial_number">
           رقم التسلسل *
-          <input type="text" name="serial_number" required>
+          <input type="text" name="serial_number">
         </label>
 
-        <label>
-          التاريخ *
+        <!-- حقل العدد للصادر -->
+        <label data-field="issue_number" hidden>
+          العدد *
+          <input type="text" name="issue_number">
+        </label>
+
+        <label data-field="doc_date">
+          <span data-label-incoming>تاريخ التسجيل *</span>
+          <span data-label-outgoing hidden>تاريخ الصدور *</span>
           <input type="date" name="doc_date" required>
         </label>
 
-        <label>
-          اسم الدائرة *
+        <label data-field="department">
+          <span data-label-incoming>اسم الدائرة (الجهة الوارد منها) *</span>
+          <span data-label-outgoing hidden>الجهة الصادر إليها (اسم الدائرة) *</span>
           <input type="text" name="department" required>
         </label>
 
-        <label>
-          رقم الكتاب *
-          <input type="text" name="letter_number" required>
+        <label data-field="letter_number">
+          رقم كتاب الجهة *
+          <input type="text" name="letter_number">
         </label>
 
-        <label>
-          تاريخ الكتاب *
-          <input type="date" name="letter_date" required>
+        <label data-field="letter_date">
+          تاريخ كتاب الجهة *
+          <input type="date" name="letter_date">
         </label>
 
-        <label>
+        <label data-field="subject">
           الموضوع *
           <textarea name="subject" rows="3" required></textarea>
         </label>
@@ -404,6 +543,33 @@
       <footer>
         <button type="button" value="cancel">إلغاء</button>
         <button type="submit" value="delete-confirm">نعم، احذف الوثيقة</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- نافذة منبثقة: استعادة نسخة احتياطية -->
+  <dialog id="restore-dialog">
+    <form method="POST" action="/api/restore" enctype="multipart/form-data">
+      <header>
+        <h3>استعادة نسخة احتياطية للأرشيف</h3>
+        <button type="button" value="cancel" title="إغلاق">&times;</button>
+      </header>
+
+      <fieldset>
+        <aside role="alert">
+          <strong>تنبيه هام:</strong> ستؤدي عملية الاستعادة إلى استبدال قاعدة البيانات والملفات الحالية بالبيانات الموجودة في ملف النسخة الاحتياطية. يرجى التأكد من اختيار ملف النسخ الاحتياطي الصحيح الصادر من النظام.
+        </aside>
+
+        <label>
+          ملف النسخة الاحتياطية *
+          <span>ملف ZIP صادر من النظام (أو ملف قاعدة بيانات archive.db)</span>
+          <input type="file" name="backup_file" accept=".zip,.db" required>
+        </label>
+      </fieldset>
+
+      <footer>
+        <button type="button" value="cancel">إلغاء</button>
+        <button type="submit" value="restore-confirm">بدء الاستعادة الآن</button>
       </footer>
     </form>
   </dialog>

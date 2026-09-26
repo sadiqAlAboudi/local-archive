@@ -1,6 +1,6 @@
-# Local Archive 📁
+# Local Archive 📁 (الأرشيف المحلي)
 
-A clean, minimalist, offline local web application for archiving official documents, letters, and records (PDFs and images) with SQLite storage, quick search, retrieval, printing, and automated database backups.
+A clean, minimalist, offline local web application for archiving official incoming and outgoing documents, letters, and administrative records (PDFs and images) with SQLite storage, quick search, retrieval, printing, and automated full archive backups and restoration (database + files).
 
 ---
 
@@ -11,7 +11,6 @@ Run the server with:
 ```bash
 go run main.go
 ```
-*(or `go run main.go serve`)*
 
 Then open your browser to **[http://localhost:8080](http://localhost:8080)**.
 
@@ -23,21 +22,50 @@ Then open your browser to **[http://localhost:8080](http://localhost:8080)**.
 
 ---
 
-## 📋 Document Metadata Fields
+## 📋 Document Types & Metadata Fields
 
-Each archived document saves the following fields:
-1. **رقم التسلسل** (Serial Number)
-2. **التاريخ** (Date)
-3. **اسم الدائرة** (Department Name)
-4. **رقم الكتاب** (Letter / Document Reference Number)
-5. **تاريخ الكتاب** (Letter Date)
-6. **الموضوع** (Subject)
-7. **Attached File** (PDF document or Image: JPG, PNG, WEBP)
+Local Archive supports archiving both **Incoming Documents (الكتب الواردة)** and **Outgoing Documents (الكتب الصادرة)**:
 
-- **Custom Download Naming:** When downloading any document, it is automatically named `[رقم التسلسل]-[الموضوع].[extension]`.
-- **Multi-Field Search:**
-  - **Quick Multi-Word Search:** Type multiple words in the search box (e.g. `التربية 2026` or `101 نقل`) and the system automatically matches records across multiple fields simultaneously.
-  - **Custom Field Filtering:** Click **"تصفية مخصصة حسب عدة حقول"** to filter specifically by Serial Number, Department, Letter Number, Date, or Subject.
+### 1. الكتب الواردة (Incoming Documents)
+- **نوع الوثيقة:** كتاب وارد
+- **رقم التسلسل** (Serial Number)
+- **التاريخ** (تاريخ تسجيل الوارد)
+- **اسم الدائرة** (الجهة الوارد منها الكتاب)
+- **رقم الكتاب** (رقم كتاب الجهة الصادر منها)
+- **تاريخ الكتاب** (تاريخ كتاب الجهة الصادر منها)
+- **الموضوع** (Subject)
+- **الملف المرفق** (Attached PDF document or Image)
+- **تسمية التحميل التلقائية:** `[رقم التسلسل]-[الموضوع].[extension]`
+
+### 2. الكتب الصادرة (Outgoing Documents)
+- **نوع الوثيقة:** كتاب صادر
+- **العدد** (Issue / Letter Number)
+- **التاريخ** (تاريخ صدور الكتاب)
+- **الجهة الصادر إليها** (اسم الدائرة أو الجهة المستلمة)
+- **الموضوع** (Subject)
+- **الملف المرفق** (Attached PDF document or Image)
+- **تسمية التحميل التلقائية:** `[العدد]-[الموضوع].[extension]`
+
+---
+
+## 🔍 Multi-Field Search & Filtering
+
+- **أزرار التصفية السريعة (Quick Filter Tabs):** تصفية فورية لعرض "جميع الوثائق"، "الكتب الواردة فقط"، أو "الكتب الصادرة فقط".
+- **البحث السريع المتعدد (Quick Multi-Word Search):** ابحث بكلمة أو عدة كلمات (مثال: `التربية 2026` أو `742 نقل`) للبحث الفوري عبر كافة الحقول في آن واحد.
+- **التصفية المخصصة (Custom Field Filtering):** انقر على **"تصفية مخصصة حسب عدة حقول"** للتصفية بحسب رقم التسلسل أو العدد، اسم الدائرة، رقم الكتاب، التاريخ، أو الموضوع.
+
+---
+
+## 💾 Data Folder, Backup & Restore (القاعدة والملفات)
+
+- **المجلدات التلقائية:** عند تشغيل التطبيق، يتم تلقائياً إنشاء مجلد `data/` ومجلد المرفقات `data/uploads/` وقاعدة بيانات SQLite في `data/archive.db`.
+- **النسخ الاحتياطي الشامل (Full Backup):**
+  - عند النقر على زر **"نسخ احتياطي شامل"** في الشريط العلوي، يقوم النظام بإنشاء ملف مضغوط بصيغة ZIP (`archive_backup_*.zip`) يحتوي على:
+    1. نسخة سليمة ومحدثة من قاعدة البيانات (`archive.db`).
+    2. كافة الملفات والوثائق المرفقة داخل مجلد `uploads/`.
+- **استعادة النسخة الاحتياطية (Restore Backup):**
+  - انقر على زر **"استعادة نسخة احتياطية"** في الشريط العلوي واختر ملف النسخة الاحتياطية المضغوط (`.zip` أو ملف `.db`).
+  - يتحقق النظام تلقائياً من سلامة قاعدة البيانات والملفات ويقوم باستبدال الأرشيف وإعادة تحميله بشكل آمن ومباشر.
 
 ---
 
@@ -45,31 +73,61 @@ Each archived document saves the following fields:
 
 Local Archive is fully configured as a Progressive Web App (PWA):
 - Open **http://localhost:8080** in Google Chrome, Microsoft Edge, or Brave.
-- Click the **Install** button (icon in the browser URL/address bar) or choose **"Install Local Archive"** / **"تثبيت التطبيق"** from the browser menu.
-- The app will install directly to your desktop and run in its own clean, dedicated desktop window with its custom archive icon.
-
-## 🪟 Windows Deployment & Boot Startup (For Non-Technical Users)
-
-A pre-compiled, self-contained Windows 64-bit executable `archive.exe` is included in this repository. No installation of Go, databases, or third-party tools is required.
-
-### 1. Manual Launch
-- Double-click **`start.bat`** (or `archive.exe`).
-- The application will start and automatically open your default browser to the archive.
-
-### 2. Run Automatically on Windows Boot (Autostart)
-- Double-click **`install-startup.bat`**.
-- It creates a silent launcher in your Windows Startup directory (`%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\LocalArchive.vbs`).
-- **Result:** Whenever Windows starts up, Local Archive runs quietly in the background without showing any command prompt window. You can access it anytime at `http://localhost:8080`.
-
-### 3. Remove Automatic Startup
-- Double-click **`uninstall-startup.bat`** to remove Local Archive from Windows startup.
+- Click the **Install** button in the browser address bar or choose **"Install Local Archive"** / **"تثبيت التطبيق"** from the browser menu.
+- The app will run in its own clean, dedicated desktop window with its custom archive icon.
 
 ---
 
-## 💾 Data Folder & Backup
+## 🪟 Windows Installer (مثبت ويندوز الذاتي)
 
-- **Automatic Folder Generation:** If the `data` folder is empty or does not exist, running the application automatically creates `data/`, `data/uploads/`, and initializes the SQLite database `archive.db`.
-- **Database Backup:** Click the **"نسخ احتياطي للقاعدة"** (Backup Database) button in the top navigation bar to download a snapshot of the current SQLite database (`archive_backup_*.db`).
+يتوفر مثبت تنفيذي جاهز لنظام ويندوز (`LocalArchive-Setup.exe`) دون الحاجة لتثبيت Go أو أي برامج وسيطة أو تشغيل برمجيات نصية (Scripts).
+
+### التثبيت بنقرة واحدة:
+1. قم بتشغيل ملف **`LocalArchive-Setup.exe`**.
+2. يقوم المثبت تلقائياً بـ:
+   - تثبيت التطبيق في مجلد البرامج الخاص بالمستخدم (`%LOCALAPPDATA%\LocalArchive`).
+   - إنشاء اختصار رسمي على سطح المكتب وفي قائمة ابدأ مع الأيقونة المخصصة.
+   - تهيئة التشغيل التلقائي مع إقلاع نظام ويندوز في الخلفية عبر سجل النظام (Registry).
+   - تسجيل الأرشيف المحلي في قائمة البرامج المثبتة في ويندوز (إضافة وإزالة البرامج) مع إمكانية إلغاء التثبيت النظيف في أي وقت.
+   - تشغيل التطبيق وفتح المتصفح فوراً على `http://localhost:8080`.
+
+### إعادة بناء المثبت لنظام ويندوز (للمطورين):
+```bash
+./build-windows.sh
+```
+أو عبر أمر Go المباشر:
+```bash
+GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o archive.exe .
+mkdir -p cmd/installer/payload
+cp archive.exe cmd/installer/payload/archive.exe
+cp static/favicon.ico cmd/installer/payload/favicon.ico
+GOOS=windows GOARCH=amd64 go build -ldflags="-s -w -H windowsgui" -o LocalArchive-Setup.exe ./cmd/installer
+```
+
+---
+
+## 🏗️ Project Architecture
+
+```
+local-archive/
+├── main.go                       # Minimal application entry point and flag parsing
+├── build-windows.sh              # Windows binary and installer build script
+├── templates/                    # HTML templates (embedded)
+├── static/                       # Static assets: CSS, JS, PWA icons (embedded)
+├── cmd/
+│   └── installer/                # Standalone Windows native installer (LocalArchive-Setup.exe)
+├── installer/
+│   └── local-archive.iss         # Inno Setup installer script
+├── internal/
+│   ├── models/                   # Document, User, Session, and View data models
+│   ├── database/                 # Pure-Go SQLite migrations and queries
+│   ├── backup/                   # Backup & restore engine (zip & db validation)
+│   ├── sysutil/                  # System helpers, paths, and platform helpers
+│   └── handlers/                 # HTTP controllers, session auth, and routing
+└── data/                         # Local storage (created automatically)
+    ├── archive.db                # SQLite database (WAL mode)
+    └── uploads/                  # Uploaded document files
+```
 
 ---
 
@@ -77,5 +135,6 @@ A pre-compiled, self-contained Windows 64-bit executable `archive.exe` is includ
 
 - **Arabic Interface (RTL):** Fully designed in Arabic with right-to-left layout.
 - **Minimalist Black Theme:** Clean `#000000` background with neutral dark surfaces and high-contrast typography.
+- **Custom Scrollbar Styling:** Refined dark scrollbars using standard `scrollbar-width` and `scrollbar-color` with cross-browser WebKit support.
 - **Semantic HTML Only:** Built using native tags (`<header>`, `<nav>`, `<main>`, `<table>`, `<dialog>`, `<form>`, `<dl>`, `<figure>`).
 - **Nested CSS & Zero Custom Classes:** Pure CSS nesting without a single `class="..."` anywhere in the codebase.

@@ -34,14 +34,25 @@
 
       <menu>
         <li>
-          <a href="/api/backup" value="backup" download title="تحميل نسخة احتياطية من قاعدة البيانات">
+          <a href="/api/backup" value="backup" download title="تحميل نسخة احتياطية شاملة (قاعدة البيانات والملفات المرفقة)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
               stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
               <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
-            نسخ احتياطي
+            نسخ احتياطي شامل
+          </a>
+        </li>
+        <li>
+          <a href="/#restore" value="restore" title="استعادة نسخة احتياطية (قاعدة البيانات والملفات)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            استعادة نسخة احتياطية
           </a>
         </li>
         <li>
@@ -102,12 +113,35 @@
         <h3>بيانات ومعلومات الوثيقة</h3>
         <dl>
           <div>
+            <dt>نوع الوثيقة</dt>
+            <dd>
+              <mark value="{{.Doc.DocType}}">{{.Doc.DocTypeArabic}}</mark>
+            </dd>
+          </div>
+
+          {{if eq .Doc.DocType "outgoing"}}
+          <div>
+            <dt>العدد</dt>
+            <dd><strong>{{.Doc.IssueNumber}}</strong></dd>
+          </div>
+
+          <div>
+            <dt>تاريخ الصدور</dt>
+            <dd>{{.Doc.DocDate}}</dd>
+          </div>
+
+          <div>
+            <dt>الجهة الصادر إليها</dt>
+            <dd>{{.Doc.Department}}</dd>
+          </div>
+          {{else}}
+          <div>
             <dt>رقم التسلسل</dt>
             <dd><strong>{{.Doc.SerialNumber}}</strong></dd>
           </div>
 
           <div>
-            <dt>التاريخ</dt>
+            <dt>تاريخ التسجيل</dt>
             <dd>{{.Doc.DocDate}}</dd>
           </div>
 
@@ -125,6 +159,7 @@
             <dt>تاريخ الكتاب</dt>
             <dd>{{.Doc.LetterDate}}</dd>
           </div>
+          {{end}}
 
           <div>
             <dt>الموضوع</dt>
