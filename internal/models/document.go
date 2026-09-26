@@ -93,43 +93,29 @@ func (d Document) DownloadFilename() string {
 
 // FilterParams holds filter and search query options.
 type FilterParams struct {
-	Query         string
-	DocType       string // "all", "incoming", "outgoing"
-	FilterSerial  string // Serial Number or Issue Number
-	FilterDept    string
-	FilterLetter  string
-	FilterDate    string
-	FilterSubject string
+	Query   string
+	DocType string // "all", "incoming", "outgoing"
 }
 
-// HasActiveFilters returns true if any search or filter criteria is set.
+// HasActiveFilters returns true if search query or type filter is active.
 func (f FilterParams) HasActiveFilters() bool {
-	return f.Query != "" ||
-		(f.DocType != "" && f.DocType != "all") ||
-		f.FilterSerial != "" ||
-		f.FilterDept != "" ||
-		f.FilterLetter != "" ||
-		f.FilterDate != "" ||
-		f.FilterSubject != ""
+	return f.Query != "" || (f.DocType != "" && f.DocType != "all")
 }
 
 // IndexViewData holds data for the main dashboard view.
 type IndexViewData struct {
-	TotalDocs     int64
-	TotalIncoming int64
-	TotalOutgoing int64
-	StorageUsed   string
-	Query         string
-	FilterType    string // "all", "incoming", "outgoing"
-	FilterSerial  string
-	FilterDept    string
-	FilterLetter  string
-	FilterDate    string
-	FilterSubject string
-	HasFilter      bool
-	RestoreSuccess bool
-	RestoreError   string
-	Documents      []Document
+	TotalDocs          int64
+	TotalIncoming      int64
+	TotalOutgoing      int64
+	StorageUsed        string
+	Query              string
+	FilterType         string // "all", "incoming", "outgoing"
+	HasFilter          bool
+	RestoreSuccess     bool
+	RestoreError       string
+	ShowBackupReminder bool
+	LastBackupDays     int
+	Documents          []Document
 }
 
 // ViewDocData holds data for single document preview.

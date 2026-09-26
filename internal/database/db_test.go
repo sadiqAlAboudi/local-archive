@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"local-archive/internal/models"
 )
@@ -157,5 +158,24 @@ func TestIncomingAndOutgoingDocuments(t *testing.T) {
 	remaining, _ := db.GetDocuments(models.FilterParams{DocType: "all"})
 	if len(remaining) != 1 {
 		t.Errorf("expected 1 remaining doc, got %d", len(remaining))
+	}
+}
+
+func TestBackupTimeTracking(t *testing.T) {
+	db, tempDir := setupTestDB(t)
+	defer os.RemoveAll(tempDir)
+	defer db.Close()
+
+	targetTime := time.Now().Add(-6 * 24 * time.Hour) // 6 days ago
+	if err := db.SetLastBackupTime(targetTime); err != nil {
+		t.Fatalf("SetLastBackupTime failed: %v", err)
+	}
+
+	got, err := db.GetLastBackupTime()
+	if err != nil {
+		t.Fatalf("GetLastBackupTime failed after set: %v", err)
+	}
+	if got.Format("2006-01-02 15:04:05") != targetTime.Format("2006-01-02 15:04:05") {
+		t.Errorf("expected backup time %v, got %v", targetTime, got)
 	}
 }

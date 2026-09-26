@@ -26,24 +26,14 @@ func (a *App) handleIndex(w http.ResponseWriter, r *http.Request) {
 
 	searchQuery := strings.TrimSpace(r.URL.Query().Get("q"))
 	docType := strings.TrimSpace(r.URL.Query().Get("type"))
-	filterSerial := strings.TrimSpace(r.URL.Query().Get("serial"))
-	filterDept := strings.TrimSpace(r.URL.Query().Get("dept"))
-	filterLetter := strings.TrimSpace(r.URL.Query().Get("letterno"))
-	filterDate := strings.TrimSpace(r.URL.Query().Get("date"))
-	filterSubject := strings.TrimSpace(r.URL.Query().Get("subject"))
 
 	if docType == "" {
 		docType = "all"
 	}
 
 	filterParams := models.FilterParams{
-		Query:         searchQuery,
-		DocType:       docType,
-		FilterSerial:  filterSerial,
-		FilterDept:    filterDept,
-		FilterLetter:  filterLetter,
-		FilterDate:    filterDate,
-		FilterSubject: filterSubject,
+		Query:   searchQuery,
+		DocType: docType,
 	}
 
 	totalDocs, totalIncoming, totalOutgoing, totalBytes, err := a.db.GetStats()
@@ -61,22 +51,35 @@ func (a *App) handleIndex(w http.ResponseWriter, r *http.Request) {
 	restoreSuccess := r.URL.Query().Get("restored") == "1"
 	restoreError := strings.TrimSpace(r.URL.Query().Get("restore_error"))
 
+	// Check if backup reminder should be shown (each 5 days from last backup)
+	var showBackupReminder bool
+	var lastBackupDays int
+	if totalDocs > 0 {
+		lastBackup, _ := a.db.GetLastBackupTime()
+		if lastBackup.IsZero() {
+			showBackupReminder = true
+		} else {
+			days := int(time.Since(lastBackup).Hours() / 24)
+			if days >= 5 {
+				showBackupReminder = true
+				lastBackupDays = days
+			}
+		}
+	}
+
 	data := models.IndexViewData{
-		TotalDocs:      totalDocs,
-		TotalIncoming:  totalIncoming,
-		TotalOutgoing:  totalOutgoing,
-		StorageUsed:    sysutil.FormatBytes(totalBytes),
-		Query:          searchQuery,
-		FilterType:     docType,
-		FilterSerial:   filterSerial,
-		FilterDept:     filterDept,
-		FilterLetter:   filterLetter,
-		FilterDate:     filterDate,
-		FilterSubject:  filterSubject,
-		HasFilter:      filterParams.HasActiveFilters(),
-		RestoreSuccess: restoreSuccess,
-		RestoreError:   restoreError,
-		Documents:      docs,
+		TotalDocs:          totalDocs,
+		TotalIncoming:      totalIncoming,
+		TotalOutgoing:      totalOutgoing,
+		StorageUsed:        sysutil.FormatBytes(totalBytes),
+		Query:              searchQuery,
+		FilterType:         docType,
+		HasFilter:          filterParams.HasActiveFilters(),
+		RestoreSuccess:     restoreSuccess,
+		RestoreError:       restoreError,
+		ShowBackupReminder: showBackupReminder,
+		LastBackupDays:     lastBackupDays,
+		Documents:          docs,
 	}
 
 	a.renderTemplate(w, "index.html", data)
@@ -390,6 +393,10 @@ func (a *App) handleBackup(w http.ResponseWriter, r *http.Request) {
 	downloadFilename := fmt.Sprintf("archive_backup_%s.zip", timestamp)
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, downloadFilename))
+
+	// Update last backup timestamp
+	_ = a.db.SetLastBackupTime(time.Now())
+
 	http.ServeFile(w, r, tempZipPath)
 }
 
@@ -439,6 +446,8 @@ func (a *App) handleRestore(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/?restore_error="+url.QueryEscape("تم استعادة الملفات ولكن تعذر إعادة تهيئة قاعدة البيانات: "+err.Error()), http.StatusSeeOther)
 		return
 	}
+
+	_ = a.db.SetLastBackupTime(time.Now())
 
 	http.Redirect(w, r, "/?restored=1", http.StatusSeeOther)
 }

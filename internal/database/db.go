@@ -102,6 +102,10 @@ func (d *DB) Init() error {
 		`CREATE INDEX IF NOT EXISTS idx_documents_dept ON documents(department);`,
 		`CREATE INDEX IF NOT EXISTS idx_documents_letterno ON documents(letter_number);`,
 		`CREATE INDEX IF NOT EXISTS idx_documents_subject ON documents(subject);`,
+		`CREATE TABLE IF NOT EXISTS settings (
+			key TEXT PRIMARY KEY,
+			value TEXT
+		);`,
 	}
 
 	for _, q := range queries {
@@ -167,33 +171,6 @@ func (d *DB) GetDocuments(params models.FilterParams) ([]models.Document, error)
 	if params.DocType != "" && params.DocType != "all" {
 		conditions = append(conditions, "doc_type = ?")
 		args = append(args, params.DocType)
-	}
-
-	if params.FilterSerial != "" {
-		conditions = append(conditions, "(serial_number LIKE ? OR issue_number LIKE ?)")
-		pattern := "%" + params.FilterSerial + "%"
-		args = append(args, pattern, pattern)
-	}
-
-	if params.FilterDept != "" {
-		conditions = append(conditions, "department LIKE ?")
-		args = append(args, "%"+params.FilterDept+"%")
-	}
-
-	if params.FilterLetter != "" {
-		conditions = append(conditions, "letter_number LIKE ?")
-		args = append(args, "%"+params.FilterLetter+"%")
-	}
-
-	if params.FilterDate != "" {
-		conditions = append(conditions, "(doc_date LIKE ? OR letter_date LIKE ?)")
-		pattern := "%" + params.FilterDate + "%"
-		args = append(args, pattern, pattern)
-	}
-
-	if params.FilterSubject != "" {
-		conditions = append(conditions, "subject LIKE ?")
-		args = append(args, "%"+params.FilterSubject+"%")
 	}
 
 	querySQL := `
@@ -383,5 +360,36 @@ func (d *DB) UpdateUserCredentials(userID int64, newUsername, passwordHash strin
 		SET username = ?, password_hash = ?, must_change_credentials = 0 
 		WHERE id = ?
 	`, newUsername, passwordHash, userID)
+	return err
+}
+
+// GetLastBackupTime retrieves the timestamp of the last recorded backup.
+func (d *DB) GetLastBackupTime() (time.Time, error) {
+	var val string
+	err := d.db.QueryRow("SELECT value FROM settings WHERE key = 'last_backup_at'").Scan(&val)
+	if err == sql.ErrNoRows {
+		// If no backup was ever recorded, check users table for account creation date as baseline
+		var userCreatedAt string
+		if err := d.db.QueryRow("SELECT MIN(created_at) FROM users").Scan(&userCreatedAt); err == nil && userCreatedAt != "" {
+			t, parseErr := time.Parse("2006-01-02 15:04:05", userCreatedAt)
+			if parseErr == nil {
+				return t, nil
+			}
+		}
+		return time.Time{}, nil
+	}
+	if err != nil {
+		return time.Time{}, err
+	}
+	return time.Parse(time.RFC3339, val)
+}
+
+// SetLastBackupTime records the timestamp of a successful backup.
+func (d *DB) SetLastBackupTime(t time.Time) error {
+	val := t.Format(time.RFC3339)
+	_, err := d.db.Exec(`
+		INSERT INTO settings (key, value) VALUES ('last_backup_at', ?)
+		ON CONFLICT(key) DO UPDATE SET value = excluded.value
+	`, val)
 	return err
 }

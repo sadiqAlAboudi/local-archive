@@ -113,6 +113,28 @@
       <span>خطأ في عملية الاستعادة: {{.RestoreError}}</span>
     </aside>
     {{end}}
+
+    {{if .ShowBackupReminder}}
+    <aside role="note" data-banner="backup-reminder">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+        <line x1="12" y1="9" x2="12" y2="13"></line>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </svg>
+      <div>
+        <strong>تذكير دوري بالنسخ الاحتياطي:</strong>
+        <span>
+          {{if .LastBackupDays}}
+          مضى {{.LastBackupDays}} أيام على آخر عملية نسخ احتياطي. للحفاظ على وثائقك وسجلاتك، يُرجى تحميل نسخة احتياطية الآن.
+          {{else}}
+          لم تقم بأخذ نسخة احتياطية للأرشيف منذ أكثر من 5 أيام. لحماية بياناتك ومستنداتك، يُنصح بتحميل نسخة احتياطية شاملة الآن.
+          {{end}}
+        </span>
+      </div>
+      <a href="/api/backup" download value="backup-now">تحميل نسخة احتياطية الآن</a>
+    </aside>
+    {{end}}
+
     <!-- الإحصائيات -->
     <section aria-label="Archive Statistics">
       <article>
@@ -210,38 +232,6 @@
         {{if .HasFilter}}
         <a href="/" value="reset-filter">إلغاء التصفية</a>
         {{end}}
-
-        <details {{if or .FilterSerial .FilterDept .FilterLetter .FilterDate .FilterSubject}}open{{end}}>
-          <summary>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-            </svg>
-            تصفية مخصصة حسب عدة حقول
-          </summary>
-
-          <fieldset>
-            <label>
-              رقم التسلسل أو العدد
-              <input type="text" name="serial" value="{{.FilterSerial}}" placeholder="مثال: 101 أو 540">
-            </label>
-            <label>
-              اسم الدائرة / الجهة
-              <input type="text" name="dept" value="{{.FilterDept}}" placeholder="مثال: وزارة التربية">
-            </label>
-            <label>
-              رقم الكتاب (للوارد)
-              <input type="text" name="letterno" value="{{.FilterLetter}}" placeholder="مثال: 4589">
-            </label>
-            <label>
-              التاريخ
-              <input type="text" name="date" value="{{.FilterDate}}" placeholder="مثال: 2026 أو 2026-05">
-            </label>
-            <label>
-              الموضوع
-              <input type="text" name="subject" value="{{.FilterSubject}}" placeholder="كلمة من الموضوع">
-            </label>
-          </fieldset>
-        </details>
       </form>
     </section>
 
