@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الأرشيف المحلي - أرشفة الوثائق والكتب</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="alternate icon" href="/favicon.ico">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="الأرشيف المحلي">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/app.js" defer></script>
+</head>
+
+<body>
+  <header>
+    <nav>
+      <h1>
+        <a href="/">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path>
+            <path d="M6 6h10"></path>
+            <path d="M6 10h10"></path>
+            <path d="M6 14h6"></path>
+          </svg>
+          <span>الأرشيف المحلي</span>
+        </a>
+      </h1>
+
+      <menu>
+        <li>
+          <button type="button" value="add">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            إضافة وثيقة
+          </button>
+        </li>
+        <li>
+          <a href="/api/backup" value="backup" download title="تحميل نسخة احتياطية من قاعدة البيانات">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            نسخ احتياطي لقاعدة البيانات
+          </a>
+        </li>
+        <li>
+          <a href="/change-credentials" value="change-pwd" title="تغيير اسم المستخدم وكلمة المرور">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            تغيير كلمة المرور
+          </a>
+        </li>
+        <li>
+          <a href="/logout" value="logout" title="تسجيل الخروج">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            تسجيل الخروج
+          </a>
+        </li>
+      </menu>
+    </nav>
+  </header>
+
+  <main>
+    <!-- الإحصائيات -->
+    <section aria-label="Archive Statistics">
+      <article>
+        <figure>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+        </figure>
+        <header>
+          <h3>إجمالي الوثائق</h3>
+          <p>{{.TotalDocs}}</p>
+        </header>
+      </article>
+
+      <article>
+        <figure>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path
+              d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+            </path>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+          </svg>
+        </figure>
+        <header>
+          <h3>حجم الملفات</h3>
+          <p>{{.StorageUsed}}</p>
+        </header>
+      </article>
+    </section>
+
+    <!-- شريط البحث والتصفية المتقدمة -->
+    <section role="search">
+      <form action="/" method="GET" role="search">
+        <fieldset>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="search" name="q" value="{{.Query}}"
+            placeholder="بحث سريع بكلمة أو عدة كلمات (مثال: التربية 2026 أو 101 نقل)...">
+        </fieldset>
+        <button type="submit">بحث</button>
+        {{if .HasFilter}}
+        <a href="/">إلغاء التصفية</a>
+        {{end}}
+
+        <details {{if or .FilterSerial .FilterDept .FilterLetter .FilterDate .FilterSubject}}open{{end}}>
+          <summary>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+            </svg>
+            تصفية مخصصة حسب عدة حقول
+          </summary>
+
+          <fieldset>
+            <label>
+              رقم التسلسل
+              <input type="text" name="serial" value="{{.FilterSerial}}" placeholder="مثال: 101">
+            </label>
+            <label>
+              اسم الدائرة
+              <input type="text" name="dept" value="{{.FilterDept}}" placeholder="مثال: وزارة التربية">
+            </label>
+            <label>
+              رقم الكتاب
+              <input type="text" name="letterno" value="{{.FilterLetter}}" placeholder="مثال: 4589">
+            </label>
+            <label>
+              التاريخ
+              <input type="text" name="date" value="{{.FilterDate}}" placeholder="مثال: 2026 أو 2026-05">
+            </label>
+            <label>
+              الموضوع
+              <input type="text" name="subject" value="{{.FilterSubject}}" placeholder="كلمة من الموضوع">
+            </label>
+          </fieldset>
+        </details>
+      </form>
+    </section>
+
+    <!-- جدول وقائمة الوثائق -->
+    <section aria-label="Documents Archive">
+      <header>
+        <h2>
+          الوثائق المسجلة
+          {{if .HasFilter}}
+          <mark>تم تطبيق التصفية والبحث</mark>
+          {{end}}
+        </h2>
+      </header>
+
+      {{if eq (len .Documents) 0}}
+      <article aria-label="Empty Archive">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+        </svg>
+        <h3>لا توجد وثائق في الأرشيف</h3>
+        <p>لم يتم العثور على وثائق مطابقة للبحث أو أن الأرشيف فارغ حالياً. يمكنك البدء بإضافة أول وثيقة رسمية الآن.</p>
+        <button type="button" value="add">إضافة وثيقة جديدة</button>
+      </article>
+      {{else}}
+      <table>
+        <thead>
+          <tr>
+            <th>رقم التسلسل</th>
+            <th>التاريخ</th>
+            <th>اسم الدائرة</th>
+            <th>رقم الكتاب</th>
+            <th>تاريخ الكتاب</th>
+            <th>الموضوع</th>
+            <th>نوع الملف</th>
+            <th>الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .Documents}}
+          <tr>
+            <td><strong>{{.SerialNumber}}</strong></td>
+            <td><time datetime="{{.DocDate}}">{{.DocDate}}</time></td>
+            <td>{{.Department}}</td>
+            <td>{{.LetterNumber}}</td>
+            <td><time datetime="{{.LetterDate}}">{{.LetterDate}}</time></td>
+            <td>
+              <a href="/view?id={{.ID}}" value="title-link">
+                {{.Subject}}
+              </a>
+            </td>
+            <td>
+              {{if eq .FileType "pdf"}}
+              <mark>PDF</mark>
+              {{else}}
+              <mark>صورة</mark>
+              {{end}}
+            </td>
+            <td>
+              <menu>
+                <li>
+                  <a href="/view?id={{.ID}}" title="معاينة الوثيقة">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                      stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    معاينة
+                  </a>
+                </li>
+                <li>
+                  <a href="/api/download?id={{.ID}}" download title="تحميل الملف">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                      stroke-linejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="7 10 12 15 17 10"></polyline>
+                      <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    تحميل
+                  </a>
+                </li>
+                <li>
+                  <button type="button" value="edit" title="تعديل البيانات" data-id="{{.ID}}"
+                    data-serial="{{.SerialNumber}}" data-docdate="{{.DocDate}}" data-dept="{{.Department}}"
+                    data-letterno="{{.LetterNumber}}" data-letterdate="{{.LetterDate}}" data-subject="{{.Subject}}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                      stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    تعديل
+                  </button>
+                </li>
+                <li>
+                  <button type="button" value="delete" title="حذف الوثيقة" data-id="{{.ID}}"
+                    data-subject="{{.Subject}}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                      stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    حذف
+                  </button>
+                </li>
+              </menu>
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+      {{end}}
+    </section>
+  </main>
+
+  <footer>
+    <p>طور بواسطة المبرمج صادق العبودي</p>
+  </footer>
+
+  <!-- نافذة منبثقة: إضافة وثيقة -->
+  <dialog id="add-dialog">
+    <form method="POST" action="/api/documents" enctype="multipart/form-data">
+      <header>
+        <h3>إضافة وثيقة جديدة</h3>
+        <button type="button" value="cancel" title="إغلاق">&times;</button>
+      </header>
+
+      <fieldset>
+        <label>
+          رقم التسلسل *
+          <input type="text" name="serial_number" required placeholder="مثال: 101 أو 2026/15">
+        </label>
+
+        <label>
+          التاريخ *
+          <input type="date" name="doc_date" required>
+        </label>
+
+        <label>
+          اسم الدائرة *
+          <input type="text" name="department" required
+            placeholder="مثال: وزارة التربية والتعليم / دائرة الشؤون الإدارية">
+        </label>
+
+        <label>
+          رقم الكتاب *
+          <input type="text" name="letter_number" required placeholder="مثال: 4589/ب">
+        </label>
+
+        <label>
+          تاريخ الكتاب *
+          <input type="date" name="letter_date" required>
+        </label>
+
+        <label>
+          الموضوع *
+          <textarea name="subject" rows="3" required placeholder="موضوع الكتاب أو تفاصيل الوثيقة..."></textarea>
+        </label>
+
+        <label>
+          الملف المرفق *
+          <span>ملف PDF أو صورة (JPG, PNG, WEBP)</span>
+          <input type="file" name="file" accept=".pdf,image/*" required>
+        </label>
+      </fieldset>
+
+      <footer>
+        <button type="button" value="cancel">إلغاء</button>
+        <button type="submit">حفظ الوثيقة بالأرشيف</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- نافذة منبثقة: تعديل وثيقة -->
+  <dialog id="edit-dialog">
+    <form method="POST" action="/api/documents/edit">
+      <header>
+        <h3>تعديل بيانات الوثيقة</h3>
+        <button type="button" value="cancel" title="إغلاق">&times;</button>
+      </header>
+
+      <input type="hidden" name="id">
+
+      <fieldset>
+        <label>
+          رقم التسلسل *
+          <input type="text" name="serial_number" required>
+        </label>
+
+        <label>
+          التاريخ *
+          <input type="date" name="doc_date" required>
+        </label>
+
+        <label>
+          اسم الدائرة *
+          <input type="text" name="department" required>
+        </label>
+
+        <label>
+          رقم الكتاب *
+          <input type="text" name="letter_number" required>
+        </label>
+
+        <label>
+          تاريخ الكتاب *
+          <input type="date" name="letter_date" required>
+        </label>
+
+        <label>
+          الموضوع *
+          <textarea name="subject" rows="3" required></textarea>
+        </label>
+      </fieldset>
+
+      <footer>
+        <button type="button" value="cancel">إلغاء</button>
+        <button type="submit">حفظ التعديلات</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- نافذة منبثقة: تأكيد الحذف -->
+  <dialog id="delete-dialog">
+    <form method="POST" action="/api/documents/delete">
+      <header>
+        <h3>تأكيد حذف الوثيقة</h3>
+        <button type="button" value="cancel" title="إغلاق">&times;</button>
+      </header>
+
+      <input type="hidden" name="id">
+
+      <fieldset>
+        <p>هل أنت متأكد من رغبتك في حذف الوثيقة ذات الموضوع <strong>"الموضوع"</strong> بشكل نهائي؟</p>
+        <p style="color: var(--text-dim); font-size: 0.85rem; margin-top: 0.5rem;">سيتم حذف السجل والملف المرفق من جهازك
+          نهائياً ولا يمكن التراجع عن هذه العملية.</p>
+      </fieldset>
+
+      <footer>
+        <button type="button" value="cancel">إلغاء</button>
+        <button type="submit" value="delete-confirm">نعم، احذف الوثيقة</button>
+      </footer>
+    </form>
+  </dialog>
+</body>
+
+</html>
