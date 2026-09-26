@@ -12,5 +12,8 @@ cp static/favicon.ico cmd/installer/payload/favicon.ico
 echo "Building Windows Installer (LocalArchive-Setup.exe)..."
 CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags="-s -w -H windowsgui" -o LocalArchive-Setup.exe ./cmd/installer
 
-echo "Done! Generated files:"
-ls -lh archive.exe LocalArchive-Setup.exe
+# Clean up intermediate files so only the installer remains
+rm -f archive.exe cmd/installer/payload/archive.exe
+
+echo "Done! Generated installer:"
+ls -lh LocalArchive-Setup.exe

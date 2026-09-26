@@ -40,7 +40,6 @@ jobs:
           name: Local Archive ${{ github.event.inputs.tag_name || github.ref_name }}
           files: |
             LocalArchive-Setup.exe
-            archive.exe
           generate_release_notes: true
           draft: false
           prerelease: false
