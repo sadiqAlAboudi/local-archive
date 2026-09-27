@@ -9,6 +9,7 @@ import (
 
 	"local-archive/internal/database"
 	"local-archive/internal/sysutil"
+	"local-archive/internal/updater"
 )
 
 func setupTestApp(t *testing.T) (*App, string) {
@@ -143,8 +144,7 @@ func TestWailsAppCRUD(t *testing.T) {
 
 	// 8. Test GetAppVersion
 	version := app.GetAppVersion()
-	if version != "0.1.5" {
-		t.Fatalf("expected version 0.1.5, got %s", version)
+	if version != updater.CurrentVersion {
+		t.Fatalf("expected version %s, got %s", updater.CurrentVersion, version)
 	}
 }
-

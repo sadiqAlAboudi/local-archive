@@ -49,7 +49,6 @@ type UpdateInfo struct {
 	CurrentVersion string `json:"current_version"`
 	LatestVersion  string `json:"latest_version"`
 	ReleaseTitle   string `json:"release_title"`
-	ReleaseNotes   string `json:"release_notes"`
 	PublishedAt    string `json:"published_at"`
 	DownloadURL    string `json:"download_url"`
 	AssetSize      int64  `json:"asset_size"`
@@ -150,7 +149,6 @@ func CheckForUpdates(client *http.Client, currentVersion, repoOwner, repoName st
 		CurrentVersion: currentVersion,
 		LatestVersion:  latestTag,
 		ReleaseTitle:   releaseTitle,
-		ReleaseNotes:   release.Body,
 		PublishedAt:    release.PublishedAt,
 		DownloadURL:    installerAsset.BrowserDownloadURL,
 		AssetSize:      installerAsset.Size,

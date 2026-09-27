@@ -185,7 +185,6 @@ export namespace updater {
 	    current_version: string;
 	    latest_version: string;
 	    release_title: string;
-	    release_notes: string;
 	    published_at: string;
 	    download_url: string;
 	    asset_size: number;
@@ -202,7 +201,6 @@ export namespace updater {
 	        this.current_version = source["current_version"];
 	        this.latest_version = source["latest_version"];
 	        this.release_title = source["release_title"];
-	        this.release_notes = source["release_notes"];
 	        this.published_at = source["published_at"];
 	        this.download_url = source["download_url"];
 	        this.asset_size = source["asset_size"];

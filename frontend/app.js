@@ -659,7 +659,6 @@ function openUpdateDialog(updateInfo) {
   const currentVerLabel = document.getElementById("update-current-version-label");
   const releaseTitle = document.getElementById("update-release-title");
   const metaInfo = document.getElementById("update-meta-info");
-  const notesContent = document.getElementById("update-notes-content");
   const progressContainer = document.getElementById("update-progress-container");
   const progressFill = document.getElementById("update-progress-fill");
   const progressPercent = document.getElementById("update-progress-percent");
@@ -680,8 +679,6 @@ function openUpdateDialog(updateInfo) {
     } catch (_) {}
   }
   metaInfo.innerHTML = metaHtml;
-
-  notesContent.textContent = updateInfo.release_notes || "تحسينات وإصلاحات عامة في النظام والاستقرار.";
 
   progressContainer.style.display = "none";
   progressFill.style.width = "0%";

@@ -1723,32 +1723,6 @@ dialog.dialog-large {
   flex-wrap: wrap;
 }
 
-.update-notes-container {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.update-notes-container h4 {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-heading);
-}
-
-.update-notes-content {
-  background-color: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 0.85rem 1rem;
-  max-height: 180px;
-  overflow-y: auto;
-  font-size: 0.85rem;
-  line-height: 1.6;
-  color: var(--text-main);
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
 .update-progress-container {
   background-color: var(--bg-surface-elevated);
   border: 1px solid var(--border-focus);
