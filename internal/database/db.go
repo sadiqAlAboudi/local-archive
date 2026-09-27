@@ -91,6 +91,7 @@ func (d *DB) Init() error {
 			key TEXT PRIMARY KEY,
 			value TEXT
 		);`,
+		`INSERT OR IGNORE INTO settings (key, value) VALUES ('installed_at', CURRENT_TIMESTAMP);`,
 		// Clean up obsolete tables from legacy web application
 		`DROP TABLE IF EXISTS sessions;`,
 		`DROP TABLE IF EXISTS users;`,
@@ -269,17 +270,59 @@ func (d *DB) DeleteDocument(id int64) (string, error) {
 	return filename, nil
 }
 
+// HasBackupRecord checks if at least one successful backup was ever recorded.
+func (d *DB) HasBackupRecord() (bool, error) {
+	var count int
+	err := d.db.QueryRow("SELECT COUNT(*) FROM settings WHERE key = 'last_backup_at'").Scan(&count)
+	return count > 0, err
+}
+
 // GetLastBackupTime retrieves the timestamp of the last recorded backup.
+// If no backup was ever taken, it returns the baseline time from 'installed_at'
+// or the earliest document creation timestamp.
 func (d *DB) GetLastBackupTime() (time.Time, error) {
 	var val string
 	err := d.db.QueryRow("SELECT value FROM settings WHERE key = 'last_backup_at'").Scan(&val)
-	if err == sql.ErrNoRows {
-		return time.Time{}, nil
+	if err == nil && val != "" {
+		t, parseErr := time.Parse(time.RFC3339, val)
+		if parseErr == nil {
+			return t, nil
+		}
+		t, parseErr = time.Parse("2006-01-02 15:04:05", val)
+		if parseErr == nil {
+			return t, nil
+		}
 	}
-	if err != nil {
-		return time.Time{}, err
+
+	// No backup recorded yet; check installed_at
+	var installedAt string
+	err = d.db.QueryRow("SELECT value FROM settings WHERE key = 'installed_at'").Scan(&installedAt)
+	if err == nil && installedAt != "" {
+		t, parseErr := time.Parse("2006-01-02 15:04:05", installedAt)
+		if parseErr == nil {
+			return t, nil
+		}
+		t, parseErr = time.Parse(time.RFC3339, installedAt)
+		if parseErr == nil {
+			return t, nil
+		}
 	}
-	return time.Parse(time.RFC3339, val)
+
+	// Fallback to earliest document created_at if installed_at is not available
+	var docCreatedAt string
+	err = d.db.QueryRow("SELECT MIN(created_at) FROM documents").Scan(&docCreatedAt)
+	if err == nil && docCreatedAt != "" {
+		t, parseErr := time.Parse("2006-01-02 15:04:05", docCreatedAt)
+		if parseErr == nil {
+			return t, nil
+		}
+		t, parseErr = time.Parse(time.RFC3339, docCreatedAt)
+		if parseErr == nil {
+			return t, nil
+		}
+	}
+
+	return time.Now(), nil
 }
 
 // SetLastBackupTime records the timestamp of a successful backup.

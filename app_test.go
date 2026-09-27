@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"local-archive/internal/database"
 	"local-archive/internal/sysutil"
@@ -84,6 +85,9 @@ func TestWailsAppCRUD(t *testing.T) {
 	if stats.TotalDocs != 2 || stats.TotalIncoming != 1 || stats.TotalOutgoing != 1 {
 		t.Fatalf("unexpected stats: total=%d, incoming=%d, outgoing=%d", stats.TotalDocs, stats.TotalIncoming, stats.TotalOutgoing)
 	}
+	if stats.ShowBackupReminder {
+		t.Fatalf("expected ShowBackupReminder to be false for a fresh archive, got true")
+	}
 
 	// 4. Test GetDocuments with filters
 	docsIncoming, err := app.GetDocuments("", "incoming")
@@ -125,5 +129,15 @@ func TestWailsAppCRUD(t *testing.T) {
 	statsAfterDelete, _ := app.GetStats()
 	if statsAfterDelete.TotalDocs != 1 {
 		t.Fatalf("expected 1 doc after deletion, got %d", statsAfterDelete.TotalDocs)
+	}
+
+	// 7. Test Backup Reminder when 6 days pass
+	sixDaysAgo := time.Now().Add(-6 * 24 * time.Hour)
+	if err := app.db.SetLastBackupTime(sixDaysAgo); err != nil {
+		t.Fatalf("SetLastBackupTime failed: %v", err)
+	}
+	statsAfter6Days, _ := app.GetStats()
+	if !statsAfter6Days.ShowBackupReminder || statsAfter6Days.LastBackupDays < 5 {
+		t.Fatalf("expected ShowBackupReminder to be true after 6 days, got %+v", statsAfter6Days)
 	}
 }

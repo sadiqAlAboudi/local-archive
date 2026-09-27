@@ -294,14 +294,17 @@ func (a *App) GetStats() (models.IndexViewData, error) {
 	var showReminder bool
 	var lastBackupDays int
 	if totalDocs > 0 {
-		lastBackup, _ := a.db.GetLastBackupTime()
-		if lastBackup.IsZero() {
-			showReminder = true
-		} else {
+		hasBackup, _ := a.db.HasBackupRecord()
+		lastBackup, err := a.db.GetLastBackupTime()
+		if err == nil && !lastBackup.IsZero() {
 			days := int(time.Since(lastBackup).Hours() / 24)
 			if days >= 5 {
 				showReminder = true
-				lastBackupDays = days
+				if hasBackup {
+					lastBackupDays = days
+				} else {
+					lastBackupDays = 0
+				}
 			}
 		}
 	}

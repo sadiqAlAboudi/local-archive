@@ -101,7 +101,7 @@ async function refreshStats() {
     const existingReminder = document.getElementById("backup-reminder-alert");
     if (existingReminder) existingReminder.remove();
 
-    if (stats.ShowBackupReminder) {
+    if (stats.ShowBackupReminder && sessionStorage.getItem("dismiss_backup_reminder") !== "1") {
       const banner = document.createElement("aside");
       banner.id = "backup-reminder-alert";
       banner.setAttribute("role", "note");
@@ -121,11 +121,16 @@ async function refreshStats() {
           </span>
         </div>
         <a href="#" value="backup-now" id="btn-backup-now">حفظ نسخة احتياطية الآن</a>
+        <button type="button" value="dismiss" id="btn-dismiss-backup" title="إغلاق التنبيه">&times;</button>
       `;
 
       banner.querySelector("#btn-backup-now").addEventListener("click", (e) => {
         e.preventDefault();
         handleCreateBackup();
+      });
+      banner.querySelector("#btn-dismiss-backup").addEventListener("click", () => {
+        sessionStorage.setItem("dismiss_backup_reminder", "1");
+        banner.remove();
       });
       alertContainer.prepend(banner);
     }
@@ -306,6 +311,7 @@ async function handleCreateBackup() {
   try {
     const savedPath = await window.go.main.App.CreateBackup();
     if (savedPath) {
+      sessionStorage.removeItem("dismiss_backup_reminder");
       showAlert(`تم حفظ النسخة الاحتياطية بنجاح في: ${savedPath}`, "success");
       await refreshStats();
     }
