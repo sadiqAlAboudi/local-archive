@@ -178,3 +178,38 @@ export namespace models {
 
 }
 
+export namespace updater {
+	
+	export class UpdateInfo {
+	    available: boolean;
+	    current_version: string;
+	    latest_version: string;
+	    release_title: string;
+	    release_notes: string;
+	    published_at: string;
+	    download_url: string;
+	    asset_size: number;
+	    formatted_size: string;
+	    asset_name: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.available = source["available"];
+	        this.current_version = source["current_version"];
+	        this.latest_version = source["latest_version"];
+	        this.release_title = source["release_title"];
+	        this.release_notes = source["release_notes"];
+	        this.published_at = source["published_at"];
+	        this.download_url = source["download_url"];
+	        this.asset_size = source["asset_size"];
+	        this.formatted_size = source["formatted_size"];
+	        this.asset_name = source["asset_name"];
+	    }
+	}
+
+}
+

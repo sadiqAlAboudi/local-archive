@@ -376,6 +376,76 @@ body {
       }
     }
 
+    /* Update Available Banner */
+    aside[data-banner="update-available"] {
+      background-color: rgba(37, 99, 235, 0.12);
+      border: 1px solid rgba(37, 99, 235, 0.35);
+      color: #93c5fd;
+      border-radius: var(--radius-sm);
+      padding: 0.85rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+
+      svg {
+        width: 22px;
+        height: 22px;
+        flex-shrink: 0;
+        color: #60a5fa;
+      }
+
+      div {
+        flex: 1;
+        min-width: 260px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        font-size: 0.9rem;
+
+        strong {
+          color: #ffffff;
+        }
+
+        span {
+          color: #bfdbfe;
+          font-size: 0.85rem;
+        }
+      }
+
+      button[value="update-now"] {
+        background-color: var(--accent);
+        color: #ffffff;
+        border: none;
+        font-weight: 700;
+        font-size: 0.85rem;
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-sm);
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+
+        &:hover {
+          background-color: var(--accent-hover);
+        }
+      }
+
+      button[value="dismiss"] {
+        background: transparent;
+        border: none;
+        color: #93c5fd;
+        font-size: 1.4rem;
+        cursor: pointer;
+        padding: 0 0.35rem;
+        line-height: 1;
+        transition: color 0.15s ease;
+
+        &:hover {
+          color: #ffffff;
+        }
+      }
+    }
+
     /* Archive Stats */
     section[aria-label="Archive Statistics"] {
       display: grid;
@@ -1598,4 +1668,124 @@ dialog.dialog-large {
   object-fit: contain;
   border-radius: var(--radius-sm);
 }
+
+/* Update Modal Dialog */
+.update-dialog-body {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.update-version-card {
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.update-version-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.update-badge {
+  background-color: rgba(37, 99, 235, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(37, 99, 235, 0.4);
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.update-current-version {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+.update-release-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.update-meta-info {
+  font-size: 0.825rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.update-notes-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.update-notes-container h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.update-notes-content {
+  background-color: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  max-height: 180px;
+  overflow-y: auto;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-main);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.update-progress-container {
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-focus);
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.update-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+  color: var(--text-heading);
+}
+
+.progress-bar-track {
+  width: 100%;
+  height: 10px;
+  background-color: var(--bg-input);
+  border-radius: 9999px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #38bdf8);
+  border-radius: 9999px;
+  transition: width 0.15s ease-out;
+}
+
+.update-progress-detail {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
 

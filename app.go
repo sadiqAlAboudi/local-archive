@@ -17,6 +17,7 @@ import (
 	"local-archive/internal/database"
 	"local-archive/internal/models"
 	"local-archive/internal/sysutil"
+	"local-archive/internal/updater"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -377,3 +378,74 @@ func (a *App) RestoreBackup() error {
 	_ = a.db.SetLastBackupTime(time.Now())
 	return nil
 }
+
+// GetAppVersion returns the current application version.
+func (a *App) GetAppVersion() string {
+	return updater.CurrentVersion
+}
+
+// CheckForUpdate queries GitHub releases to see if a newer version is available.
+func (a *App) CheckForUpdate() (*updater.UpdateInfo, error) {
+	return updater.CheckForUpdates(nil, updater.CurrentVersion, updater.DefaultRepoOwner, updater.DefaultRepoName)
+}
+
+// DownloadAndApplyUpdate downloads LocalArchive-Setup.exe to %TEMP%,
+// runs the installer silently, and exits the running app so files can be overwritten.
+func (a *App) DownloadAndApplyUpdate() error {
+	info, err := a.CheckForUpdate()
+	if err != nil {
+		return fmt.Errorf("فشل التحقق من وجود تحديث: %w", err)
+	}
+
+	if !info.Available {
+		return fmt.Errorf("أنت تستخدم بالفعل أحدث إصدار متاح (%s)", updater.CurrentVersion)
+	}
+
+	ctx := a.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	if a.ctx != nil {
+		runtime.EventsEmit(a.ctx, "update:status", "downloading")
+	}
+
+	installerPath, err := updater.DownloadInstaller(ctx, nil, info.DownloadURL, func(downloaded, total int64, percent float64) {
+		if a.ctx != nil {
+			runtime.EventsEmit(a.ctx, "update:progress", map[string]interface{}{
+				"downloaded":          downloaded,
+				"total":               total,
+				"percent":             percent,
+				"downloadedFormatted": sysutil.FormatBytes(downloaded),
+				"totalFormatted":      sysutil.FormatBytes(total),
+			})
+		}
+	})
+	if err != nil {
+		if a.ctx != nil {
+			runtime.EventsEmit(a.ctx, "update:status", "error")
+		}
+		return fmt.Errorf("فشل تنزيل ملف التحديث: %w", err)
+	}
+
+	if a.ctx != nil {
+		runtime.EventsEmit(a.ctx, "update:status", "installing")
+	}
+
+	// Flush and close the database before shutting down
+	if a.db != nil {
+		_ = a.db.Close()
+	}
+
+	time.Sleep(300 * time.Millisecond)
+
+	if err := updater.RunInstallerAndExit(installerPath); err != nil {
+		if a.ctx != nil {
+			runtime.EventsEmit(a.ctx, "update:status", "error")
+		}
+		return fmt.Errorf("فشل تشغيل مثبت التحديث: %w", err)
+	}
+
+	return nil
+}
+

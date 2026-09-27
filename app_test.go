@@ -140,4 +140,11 @@ func TestWailsAppCRUD(t *testing.T) {
 	if !statsAfter6Days.ShowBackupReminder || statsAfter6Days.LastBackupDays < 5 {
 		t.Fatalf("expected ShowBackupReminder to be true after 6 days, got %+v", statsAfter6Days)
 	}
+
+	// 8. Test GetAppVersion
+	version := app.GetAppVersion()
+	if version != "0.1.2" {
+		t.Fatalf("expected version 0.1.2, got %s", version)
+	}
 }
+

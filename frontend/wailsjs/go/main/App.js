@@ -37,3 +37,16 @@ export function SelectDocumentFile() {
 export function UpdateDocument(arg1) {
   return window['go']['main']['App']['UpdateDocument'](arg1);
 }
+
+export function CheckForUpdate() {
+  return window['go']['main']['App']['CheckForUpdate']();
+}
+
+export function DownloadAndApplyUpdate() {
+  return window['go']['main']['App']['DownloadAndApplyUpdate']();
+}
+
+export function GetAppVersion() {
+  return window['go']['main']['App']['GetAppVersion']();
+}
+

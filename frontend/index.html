@@ -60,6 +60,18 @@
             استعادة نسخة احتياطية
           </button>
         </li>
+        <li>
+          <button type="button" value="update" id="btn-check-update" title="التحقق من وجود تحديثات جديدة">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <path d="M3 3v5h5"></path>
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+              <path d="M16 16h5v5"></path>
+            </svg>
+            تحديث البرنامج
+          </button>
+        </li>
       </menu>
     </nav>
   </header>
@@ -422,6 +434,55 @@
         </article>
       </div>
     </div>
+  </dialog>
+
+  <!-- نافذة منبثقة: تحديث التطبيق -->
+  <dialog id="update-dialog">
+    <form id="update-form" onsubmit="return false;">
+      <header>
+        <h3>تحديث الأرشيف المحلي</h3>
+        <button type="button" value="cancel" class="dialog-close" title="إغلاق">&times;</button>
+      </header>
+
+      <div class="update-dialog-body">
+        <div class="update-version-card">
+          <div class="update-version-header">
+            <span class="update-badge" id="update-new-version-badge">إصدار جديد</span>
+            <span class="update-current-version" id="update-current-version-label">الإصدار الحالي: 0.1.2</span>
+          </div>
+          <p class="update-release-title" id="update-release-title"></p>
+          <div class="update-meta-info" id="update-meta-info"></div>
+        </div>
+
+        <div class="update-notes-container" id="update-notes-wrapper">
+          <h4>سجل التغييرات وملاحظات الإصدار:</h4>
+          <div class="update-notes-content" id="update-notes-content"></div>
+        </div>
+
+        <div class="update-progress-container" id="update-progress-container" style="display: none;">
+          <div class="update-progress-labels">
+            <span id="update-progress-status">جاري تنزيل التحديث...</span>
+            <strong id="update-progress-percent">0%</strong>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="update-progress-fill" style="width: 0%;"></div>
+          </div>
+          <small class="update-progress-detail" id="update-progress-detail"></small>
+        </div>
+      </div>
+
+      <footer>
+        <button type="button" value="cancel" id="btn-cancel-update">إلغاء</button>
+        <button type="button" id="btn-start-update" class="btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          تنزيل وتثبيت التحديث الآن
+        </button>
+      </footer>
+    </form>
   </dialog>
 
 </body>

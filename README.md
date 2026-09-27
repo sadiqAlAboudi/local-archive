@@ -13,6 +13,7 @@ A minimalist, offline-first native cross-platform desktop application for archiv
 - **Zero CGO SQLite:** Embedded `modernc.org/sqlite` database stored in `%LOCALAPPDATA%\LocalArchive` on Windows (or `./data` in development mode).
 - **Automated Backup & Restore:** Save full ZIP archives (database + attachments) directly to any disk location via native save dialogs, and restore with automatic database re-initialization.
 - **Embedded Document Viewer:** Stream and preview attached PDFs and images securely inside the webview without exposing external HTTP ports.
+- **Automated In-App Updates:** Seamless update detection and installation via GitHub Releases (`github.com/sadiqalaboudi/local-archive`). Downloads `LocalArchive-Setup.exe` to `%TEMP%`, runs the NSIS installer silently (`/S`), and exits the application so files are safely updated.
 
 ---
 
@@ -63,7 +64,8 @@ local-archive/
 │   ├── backup/                   # ZIP backup generation and archive restoration
 │   ├── database/                 # SQLite connection, schema migrations, and queries
 │   ├── models/                   # Document, User, Session, and View data models
-│   └── sysutil/                  # Persistent data paths (%LOCALAPPDATA%) and utilities
+│   ├── sysutil/                  # Persistent data paths (%LOCALAPPDATA%) and utilities
+│   └── updater/                  # GitHub releases auto-updater, semver comparison, and installer runner
 ├── app.go                        # Wails App struct and exposed backend methods
 ├── app_test.go                   # Unit tests for Wails App bindings
 ├── go.mod                        # Go module definition
