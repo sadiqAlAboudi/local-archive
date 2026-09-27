@@ -1,2 +1,4 @@
-data/*
+data
 *.exe
+build/bin/
+build/windows/installer/tmp/

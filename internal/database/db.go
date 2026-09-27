@@ -3,13 +3,11 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
 	"local-archive/internal/models"
 
-	"golang.org/x/crypto/bcrypt"
 	_ "modernc.org/sqlite"
 )
 
@@ -62,22 +60,9 @@ func (d *DB) Reopen(dbPath string) error {
 	return d.Init()
 }
 
-// Init sets up tables, runs schema migrations, and seeds the default admin user.
+// Init sets up tables and runs schema migrations.
 func (d *DB) Init() error {
 	queries := []string{
-		`CREATE TABLE IF NOT EXISTS users (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			username TEXT UNIQUE NOT NULL,
-			password_hash TEXT NOT NULL,
-			must_change_credentials INTEGER DEFAULT 1,
-			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-		);`,
-		`CREATE TABLE IF NOT EXISTS sessions (
-			token TEXT PRIMARY KEY,
-			user_id INTEGER NOT NULL,
-			expires_at DATETIME NOT NULL,
-			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-		);`,
 		`CREATE TABLE IF NOT EXISTS documents (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			doc_type TEXT NOT NULL DEFAULT 'incoming',
@@ -106,6 +91,9 @@ func (d *DB) Init() error {
 			key TEXT PRIMARY KEY,
 			value TEXT
 		);`,
+		// Clean up obsolete tables from legacy web application
+		`DROP TABLE IF EXISTS sessions;`,
+		`DROP TABLE IF EXISTS users;`,
 	}
 
 	for _, q := range queries {
@@ -115,28 +103,9 @@ func (d *DB) Init() error {
 	}
 
 	// Schema migrations for backward compatibility
-	_, _ = d.db.Exec("ALTER TABLE users ADD COLUMN must_change_credentials INTEGER DEFAULT 1;")
 	_, _ = d.db.Exec("ALTER TABLE documents ADD COLUMN doc_type TEXT DEFAULT 'incoming';")
 	_, _ = d.db.Exec("ALTER TABLE documents ADD COLUMN issue_number TEXT DEFAULT '';")
 	_, _ = d.db.Exec("UPDATE documents SET doc_type = 'incoming' WHERE doc_type IS NULL OR doc_type = '';")
-
-	// Seed default admin if user table is empty
-	var count int
-	if err := d.db.QueryRow("SELECT COUNT(*) FROM users").Scan(&count); err != nil {
-		return err
-	}
-
-	if count == 0 {
-		hash, err := bcrypt.GenerateFromPassword([]byte("admin"), bcrypt.DefaultCost)
-		if err != nil {
-			return err
-		}
-		_, err = d.db.Exec("INSERT INTO users (username, password_hash, must_change_credentials) VALUES (?, ?, 1)", "admin", string(hash))
-		if err != nil {
-			return err
-		}
-		log.Println("Initialized default administrator account (username: admin, password: admin)")
-	}
 
 	return nil
 }
@@ -154,35 +123,37 @@ func (d *DB) GetStats() (totalDocs, totalIncoming, totalOutgoing, totalBytes int
 	return
 }
 
-// GetDocuments searches and filters documents according to FilterParams.
+// GetDocuments queries documents using filters.
 func (d *DB) GetDocuments(params models.FilterParams) ([]models.Document, error) {
 	var conditions []string
 	var args []interface{}
-
-	if params.Query != "" {
-		words := strings.Fields(params.Query)
-		for _, w := range words {
-			conditions = append(conditions, "(serial_number LIKE ? OR issue_number LIKE ? OR doc_date LIKE ? OR department LIKE ? OR letter_number LIKE ? OR letter_date LIKE ? OR subject LIKE ?)")
-			pattern := "%" + w + "%"
-			args = append(args, pattern, pattern, pattern, pattern, pattern, pattern, pattern)
-		}
-	}
 
 	if params.DocType != "" && params.DocType != "all" {
 		conditions = append(conditions, "doc_type = ?")
 		args = append(args, params.DocType)
 	}
 
-	querySQL := `
+	if params.Query != "" {
+		terms := strings.Fields(params.Query)
+		for _, term := range terms {
+			like := "%" + term + "%"
+			conditions = append(conditions, "(serial_number LIKE ? OR issue_number LIKE ? OR department LIKE ? OR letter_number LIKE ? OR subject LIKE ? OR original_filename LIKE ?)")
+			args = append(args, like, like, like, like, like, like)
+		}
+	}
+
+	query := `
 		SELECT id, doc_type, serial_number, issue_number, doc_date, department, letter_number, letter_date, subject, filename, original_filename, file_type, mime_type, file_size, created_at, updated_at
 		FROM documents
 	`
-	if len(conditions) > 0 {
-		querySQL += " WHERE " + strings.Join(conditions, " AND ")
-	}
-	querySQL += " ORDER BY id DESC"
 
-	rows, err := d.db.Query(querySQL, args...)
+	if len(conditions) > 0 {
+		query += " WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	query += " ORDER BY id DESC"
+
+	rows, err := d.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -193,25 +164,36 @@ func (d *DB) GetDocuments(params models.FilterParams) ([]models.Document, error)
 		var doc models.Document
 		var createdAtStr, updatedAtStr string
 		err := rows.Scan(
-			&doc.ID, &doc.DocType, &doc.SerialNumber, &doc.IssueNumber, &doc.DocDate, &doc.Department,
-			&doc.LetterNumber, &doc.LetterDate, &doc.Subject,
-			&doc.Filename, &doc.OriginalFilename, &doc.FileType,
-			&doc.MimeType, &doc.FileSize, &createdAtStr, &updatedAtStr,
+			&doc.ID,
+			&doc.DocType,
+			&doc.SerialNumber,
+			&doc.IssueNumber,
+			&doc.DocDate,
+			&doc.Department,
+			&doc.LetterNumber,
+			&doc.LetterDate,
+			&doc.Subject,
+			&doc.Filename,
+			&doc.OriginalFilename,
+			&doc.FileType,
+			&doc.MimeType,
+			&doc.FileSize,
+			&createdAtStr,
+			&updatedAtStr,
 		)
 		if err != nil {
-			continue
+			return nil, err
 		}
+
 		doc.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAtStr)
-		if doc.CreatedAt.IsZero() {
-			doc.CreatedAt, _ = time.Parse(time.RFC3339, createdAtStr)
-		}
+		doc.UpdatedAt, _ = time.Parse("2006-01-02 15:04:05", updatedAtStr)
 		docs = append(docs, doc)
 	}
 
 	return docs, rows.Err()
 }
 
-// GetDocumentByID retrieves a single document by its ID.
+// GetDocumentByID retrieves a single document by ID.
 func (d *DB) GetDocumentByID(id int64) (*models.Document, error) {
 	var doc models.Document
 	var createdAtStr, updatedAtStr string
@@ -219,20 +201,29 @@ func (d *DB) GetDocumentByID(id int64) (*models.Document, error) {
 		SELECT id, doc_type, serial_number, issue_number, doc_date, department, letter_number, letter_date, subject, filename, original_filename, file_type, mime_type, file_size, created_at, updated_at
 		FROM documents WHERE id = ?
 	`, id).Scan(
-		&doc.ID, &doc.DocType, &doc.SerialNumber, &doc.IssueNumber, &doc.DocDate, &doc.Department,
-		&doc.LetterNumber, &doc.LetterDate, &doc.Subject,
-		&doc.Filename, &doc.OriginalFilename, &doc.FileType,
-		&doc.MimeType, &doc.FileSize, &createdAtStr, &updatedAtStr,
+		&doc.ID,
+		&doc.DocType,
+		&doc.SerialNumber,
+		&doc.IssueNumber,
+		&doc.DocDate,
+		&doc.Department,
+		&doc.LetterNumber,
+		&doc.LetterDate,
+		&doc.Subject,
+		&doc.Filename,
+		&doc.OriginalFilename,
+		&doc.FileType,
+		&doc.MimeType,
+		&doc.FileSize,
+		&createdAtStr,
+		&updatedAtStr,
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	doc.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAtStr)
-	if doc.CreatedAt.IsZero() {
-		doc.CreatedAt, _ = time.Parse(time.RFC3339, createdAtStr)
-	}
-
+	doc.UpdatedAt, _ = time.Parse("2006-01-02 15:04:05", updatedAtStr)
 	return &doc, nil
 }
 
@@ -278,104 +269,11 @@ func (d *DB) DeleteDocument(id int64) (string, error) {
 	return filename, nil
 }
 
-// HasDefaultCredentials checks if any user is flagged to change credentials.
-func (d *DB) HasDefaultCredentials() bool {
-	var count int
-	_ = d.db.QueryRow("SELECT COUNT(*) FROM users WHERE must_change_credentials = 1").Scan(&count)
-	return count > 0
-}
-
-// GetUserByUsername finds a user by username.
-func (d *DB) GetUserByUsername(username string) (*models.User, error) {
-	var user models.User
-	var createdAtStr string
-	err := d.db.QueryRow(`
-		SELECT id, username, password_hash, must_change_credentials, created_at
-		FROM users WHERE username = ?
-	`, username).Scan(&user.ID, &user.Username, &user.PasswordHash, &user.MustChangeCredentials, &createdAtStr)
-	if err != nil {
-		return nil, err
-	}
-	user.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAtStr)
-	return &user, nil
-}
-
-// GetUserByID finds a user by ID.
-func (d *DB) GetUserByID(id int64) (*models.User, error) {
-	var user models.User
-	var createdAtStr string
-	err := d.db.QueryRow(`
-		SELECT id, username, password_hash, must_change_credentials, created_at
-		FROM users WHERE id = ?
-	`, id).Scan(&user.ID, &user.Username, &user.PasswordHash, &user.MustChangeCredentials, &createdAtStr)
-	if err != nil {
-		return nil, err
-	}
-	user.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAtStr)
-	return &user, nil
-}
-
-// CreateSession saves a new user session.
-func (d *DB) CreateSession(token string, userID int64, expiresAt time.Time) error {
-	_, err := d.db.Exec("INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)", token, userID, expiresAt)
-	return err
-}
-
-// GetSessionUser validates the session token and returns the user ID and mustChange status.
-func (d *DB) GetSessionUser(token string) (userID int64, expiresAt time.Time, mustChange bool, err error) {
-	var mustChangeInt int
-	err = d.db.QueryRow(`
-		SELECT s.user_id, s.expires_at, u.must_change_credentials 
-		FROM sessions s 
-		JOIN users u ON s.user_id = u.id 
-		WHERE s.token = ?
-	`, token).Scan(&userID, &expiresAt, &mustChangeInt)
-	mustChange = (mustChangeInt == 1)
-	return
-}
-
-// DeleteSession invalidates a session token.
-func (d *DB) DeleteSession(token string) error {
-	_, err := d.db.Exec("DELETE FROM sessions WHERE token = ?", token)
-	return err
-}
-
-// UsernameExists checks whether a username is already taken by another user.
-func (d *DB) UsernameExists(username string, excludeUserID int64) (bool, error) {
-	var existsID int64
-	err := d.db.QueryRow("SELECT id FROM users WHERE username = ? AND id != ?", username, excludeUserID).Scan(&existsID)
-	if err == sql.ErrNoRows {
-		return false, nil
-	}
-	if err != nil {
-		return false, err
-	}
-	return true, nil
-}
-
-// UpdateUserCredentials updates username and password and clears the must_change_credentials flag.
-func (d *DB) UpdateUserCredentials(userID int64, newUsername, passwordHash string) error {
-	_, err := d.db.Exec(`
-		UPDATE users 
-		SET username = ?, password_hash = ?, must_change_credentials = 0 
-		WHERE id = ?
-	`, newUsername, passwordHash, userID)
-	return err
-}
-
 // GetLastBackupTime retrieves the timestamp of the last recorded backup.
 func (d *DB) GetLastBackupTime() (time.Time, error) {
 	var val string
 	err := d.db.QueryRow("SELECT value FROM settings WHERE key = 'last_backup_at'").Scan(&val)
 	if err == sql.ErrNoRows {
-		// If no backup was ever recorded, check users table for account creation date as baseline
-		var userCreatedAt string
-		if err := d.db.QueryRow("SELECT MIN(created_at) FROM users").Scan(&userCreatedAt); err == nil && userCreatedAt != "" {
-			t, parseErr := time.Parse("2006-01-02 15:04:05", userCreatedAt)
-			if parseErr == nil {
-				return t, nil
-			}
-		}
 		return time.Time{}, nil
 	}
 	if err != nil {

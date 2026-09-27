@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الأرشيف المحلي</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="preload" href="./Cairo.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="./app.css">
+  <script src="./app.js" defer></script>
+</head>
+
+<body>
+  <header>
+    <nav>
+      <h1>
+        <a href="#" id="brand-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"></path>
+            <path d="M6 6h10"></path>
+            <path d="M6 10h10"></path>
+            <path d="M6 14h6"></path>
+          </svg>
+          <span>الأرشيف المحلي</span>
+        </a>
+      </h1>
+
+      <menu>
+        <li>
+          <button type="button" value="add" id="btn-open-add">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            إضافة وثيقة
+          </button>
+        </li>
+        <li>
+          <button type="button" value="backup" id="btn-backup" title="حفظ نسخة احتياطية شاملة (قاعدة البيانات والملفات المرفقة)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            نسخ احتياطي شامل
+          </button>
+        </li>
+        <li>
+          <button type="button" value="restore" id="btn-restore" title="استعادة نسخة احتياطية (قاعدة البيانات والملفات)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            استعادة نسخة احتياطية
+          </button>
+        </li>
+      </menu>
+    </nav>
+  </header>
+
+  <main>
+    <!-- رسائل التنبيه والنسخ الاحتياطي -->
+    <div id="alert-container"></div>
+
+    <!-- بطاقات الإحصائيات -->
+    <section aria-label="Archive Statistics">
+      <article>
+        <figure>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+        </figure>
+        <header>
+          <h3>إجمالي الوثائق</h3>
+          <p id="stat-total-docs">0</p>
+        </header>
+      </article>
+
+      <article>
+        <figure>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          </svg>
+        </figure>
+        <header>
+          <h3>الكتب الواردة</h3>
+          <p id="stat-incoming-docs">0</p>
+        </header>
+      </article>
+
+      <article>
+        <figure>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          </svg>
+        </figure>
+        <header>
+          <h3>الكتب الصادرة</h3>
+          <p id="stat-outgoing-docs">0</p>
+        </header>
+      </article>
+
+      <article>
+        <figure>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path
+              d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+            </path>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+          </svg>
+        </figure>
+        <header>
+          <h3>حجم الملفات</h3>
+          <p id="stat-storage-used">0 بايت</p>
+        </header>
+      </article>
+    </section>
+
+    <!-- شريط البحث والتصفية المتقدمة -->
+    <section role="search">
+      <nav data-filter="doc-type" aria-label="تصفية نوع الوثيقة">
+        <a href="#" data-type="all" aria-current="page">جميع الوثائق (<span id="filter-count-all">0</span>)</a>
+        <a href="#" data-type="incoming">الكتب الواردة (<span id="filter-count-incoming">0</span>)</a>
+        <a href="#" data-type="outgoing">الكتب الصادرة (<span id="filter-count-outgoing">0</span>)</a>
+      </nav>
+
+      <form id="search-form" onsubmit="return false;">
+        <fieldset>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="search" id="search-input"
+            placeholder="بحث سريع بكلمة أو عدة كلمات (رقم التسلسل، العدد، الدائرة، الموضوع)...">
+        </fieldset>
+        <a href="#" id="btn-reset-filter" style="display: none;">إلغاء التصفية</a>
+      </form>
+    </section>
+
+    <!-- قائمة وجدول الوثائق -->
+    <section aria-label="Documents Archive">
+      <header>
+        <h2>
+          الوثائق المسجلة
+          <mark id="filter-indicator" style="display: none;">تم تطبيق التصفية والبحث</mark>
+        </h2>
+      </header>
+
+      <!-- حالة الأرشيف الفارغ -->
+      <article id="empty-state" aria-label="Empty Archive" style="display: none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+        </svg>
+        <h3>لا توجد وثائق في الأرشيف</h3>
+        <p>لم يتم العثور على وثائق مطابقة للبحث أو أن الأرشيف فارغ حالياً. يمكنك البدء بإضافة أول وثيقة رسمية الآن.</p>
+        <button type="button" value="add" class="btn-empty-add">إضافة وثيقة جديدة</button>
+      </article>
+
+      <!-- جدول الوثائق -->
+      <table id="docs-table">
+        <thead>
+          <tr>
+            <th>نوع الوثيقة</th>
+            <th>رقم التسلسل / العدد</th>
+            <th>التاريخ</th>
+            <th>اسم الدائرة / الجهة</th>
+            <th>رقم وتاريخ الكتاب</th>
+            <th>الموضوع</th>
+            <th>نوع الملف</th>
+            <th>الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody id="docs-tbody">
+          <!-- يتم إدراج الصفوف ديناميكياً هنا -->
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer>
+    <p>طور بواسطة المبرمج صادق العبودي</p>
+  </footer>
+
+  <!-- نافذة منبثقة: إضافة وثيقة -->
+  <dialog id="add-dialog">
+    <form id="add-form">
+      <header>
+        <h3>إضافة وثيقة جديدة للأرشيف</h3>
+        <button type="button" value="cancel" title="إغلاق">&times;</button>
+      </header>
+
+      <fieldset data-selector="doc-type">
+        <legend>نوع الوثيقة *</legend>
+        <div>
+          <label>
+            <input type="radio" name="doc_type" value="incoming" checked>
+            <span>كتاب وارد</span>
+          </label>
+          <label>
+            <input type="radio" name="doc_type" value="outgoing">
+            <span>كتاب صادر</span>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <!-- حقل رقم التسلسل للوارد فقط -->
+        <label data-field="serial_number">
+          رقم التسلسل *
+          <input type="text" name="serial_number" required placeholder="مثال: 104">
+        </label>
+
+        <!-- حقل العدد للصادر فقط -->
+        <label data-field="issue_number" hidden>
+          العدد *
+          <input type="text" name="issue_number" placeholder="مثال: 567/ص">
+        </label>
+
+        <!-- تاريخ التسجيل أو الصدور -->
+        <label data-field="doc_date">
+          <span data-label-incoming>تاريخ التسجيل *</span>
+          <span data-label-outgoing hidden>تاريخ الصدور *</span>
+          <input type="date" name="doc_date" required>
+        </label>
+
+        <!-- اسم الدائرة أو الجهة -->
+        <label data-field="department">
+          <span data-label-incoming>اسم الدائرة (الجهة الوارد منها) *</span>
+          <span data-label-outgoing hidden>الجهة الصادر إليها (اسم الدائرة) *</span>
+          <input type="text" name="department" required
+            placeholder="مثال: وزارة التربية والتعليم / دائرة الشؤون الإدارية">
+        </label>
+
+        <!-- رقم وتاريخ كتاب الجهة للوارد فقط -->
+        <label data-field="letter_number">
+          رقم كتاب الجهة *
+          <input type="text" name="letter_number" required placeholder="مثال: 4589/ب">
+        </label>
+
+        <label data-field="letter_date">
+          تاريخ كتاب الجهة *
+          <input type="date" name="letter_date" required>
+        </label>
+
+        <!-- الموضوع -->
+        <label data-field="subject">
+          الموضوع *
+          <textarea name="subject" rows="3" required placeholder="موضوع الكتاب أو تفاصيل الوثيقة..."></textarea>
+        </label>
+
+        <!-- اختيار الملف عبر مربع حوار النظام الأصلي -->
+        <label data-field="file">
+          <span>الملف المرفق *</span>
+          <span>ملف PDF أو صورة (JPG, PNG, WEBP)</span>
+          <div class="file-picker-container">
+            <button type="button" id="btn-select-file">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+              </svg>
+              اختيار الملف من الحاسوب...
+            </button>
+            <span id="selected-file-name">لم يتم اختيار ملف</span>
+            <input type="hidden" name="source_path" id="add-source-path" required>
+          </div>
+        </label>
+      </fieldset>
+
+      <footer>
+        <button type="button" value="cancel">إلغاء</button>
+        <button type="submit">حفظ الوثيقة بالأرشيف</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- نافذة منبثقة: تعديل بيانات الوثيقة -->
+  <dialog id="edit-dialog">
+    <form id="edit-form">
+      <header>
+        <h3>تعديل بيانات الوثيقة</h3>
+        <button type="button" value="cancel" title="إغلاق">&times;</button>
+      </header>
+
+      <input type="hidden" name="id">
+
+      <fieldset data-selector="doc-type">
+        <legend>نوع الوثيقة *</legend>
+        <div>
+          <label>
+            <input type="radio" name="doc_type" value="incoming">
+            <span>كتاب وارد</span>
+          </label>
+          <label>
+            <input type="radio" name="doc_type" value="outgoing">
+            <span>كتاب صادر</span>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <label data-field="serial_number">
+          رقم التسلسل *
+          <input type="text" name="serial_number">
+        </label>
+
+        <label data-field="issue_number" hidden>
+          العدد *
+          <input type="text" name="issue_number">
+        </label>
+
+        <label data-field="doc_date">
+          <span data-label-incoming>تاريخ التسجيل *</span>
+          <span data-label-outgoing hidden>تاريخ الصدور *</span>
+          <input type="date" name="doc_date" required>
+        </label>
+
+        <label data-field="department">
+          <span data-label-incoming>اسم الدائرة (الجهة الوارد منها) *</span>
+          <span data-label-outgoing hidden>الجهة الصادر إليها (اسم الدائرة) *</span>
+          <input type="text" name="department" required>
+        </label>
+
+        <label data-field="letter_number">
+          رقم كتاب الجهة *
+          <input type="text" name="letter_number">
+        </label>
+
+        <label data-field="letter_date">
+          تاريخ كتاب الجهة *
+          <input type="date" name="letter_date">
+        </label>
+
+        <label data-field="subject">
+          الموضوع *
+          <textarea name="subject" rows="3" required></textarea>
+        </label>
+      </fieldset>
+
+      <footer>
+        <button type="button" value="cancel">إلغاء</button>
+        <button type="submit">حفظ التعديلات</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- نافذة منبثقة: تأكيد الحذف -->
+  <dialog id="delete-dialog">
+    <form id="delete-form">
+      <header>
+        <h3>تأكيد حذف الوثيقة</h3>
+        <button type="button" value="cancel" title="إغلاق">&times;</button>
+      </header>
+
+      <input type="hidden" name="id">
+
+      <fieldset>
+        <p style="font-size: 0.95rem; line-height: 1.6;">
+          هل أنت متأكد من رغبتك في حذف الوثيقة:
+          <strong id="delete-doc-title" style="color: var(--text-heading);">""</strong>؟
+        </p>
+        <p style="color: var(--danger); font-size: 0.85rem; margin-top: 0.5rem;">
+          سيتم حذف بيانات الوثيقة والملف المرفق نهائياً ولا يمكن التراجع عن هذه الخطوة.
+        </p>
+      </fieldset>
+
+      <footer>
+        <button type="button" value="cancel">إلغاء</button>
+        <button type="submit" style="background-color: var(--danger); color: #fff; border-color: var(--danger);">حذف نهائي</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- نافذة منبثقة: معاينة الوثيقة والملف المرفق -->
+  <dialog id="preview-dialog" class="dialog-large">
+    <div class="preview-modal-wrapper">
+      <header class="preview-modal-header">
+        <h3 id="preview-title">معاينة الوثيقة</h3>
+        <div class="preview-modal-actions">
+          <button type="button" id="btn-print-preview" title="طباعة">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 6 2 18 2 18 9"></polyline>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+              <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            طباعة
+          </button>
+          <button type="button" class="preview-close-btn" title="إغلاق">&times;</button>
+        </div>
+      </header>
+
+      <div class="preview-modal-body">
+        <!-- لوحة التفاصيل الجانبية -->
+        <aside id="preview-metadata">
+          <dl id="preview-dl"></dl>
+        </aside>
+
+        <!-- عارض الملف -->
+        <article id="preview-viewport">
+          <iframe id="preview-iframe" title="معاينة المستند" style="display: none;"></iframe>
+          <figure id="preview-figure" style="display: none;">
+            <img id="preview-img" alt="معاينة الصورة">
+          </figure>
+        </article>
+      </div>
+    </div>
+  </dialog>
+
+</body>
+
+</html>

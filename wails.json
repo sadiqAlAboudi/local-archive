@@ -1,0 +1,16 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "LocalArchive",
+  "outputfilename": "LocalArchive",
+  "frontend:dir": "frontend",
+  "author": {
+    "name": "Sadiq Al-Aboudi"
+  },
+  "info": {
+    "companyName": "LocalArchive",
+    "productName": "الأرشيف المحلي",
+    "productVersion": "0.1.1",
+    "copyright": "© 2026 Sadiq Al-Aboudi",
+    "comments": "نظام الأرشيف المحلي لإدارة وأرشفة الكتب الرسمية والوثائق"
+  }
+}

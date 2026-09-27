@@ -2,67 +2,93 @@ package main
 
 import (
 	"embed"
-	"flag"
 	"fmt"
-	"html/template"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"local-archive/internal/database"
-	"local-archive/internal/handlers"
 	"local-archive/internal/sysutil"
+
+	"github.com/wailsapp/wails/v2"
+	"github.com/wailsapp/wails/v2/pkg/options"
+	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/linux"
+	"github.com/wailsapp/wails/v2/pkg/options/windows"
 )
 
-//go:embed templates/* static/*
-var embeddedFS embed.FS
+//go:embed all:frontend
+var assets embed.FS
+
+//go:embed build/appicon.png
+var appIcon []byte
 
 func main() {
-	portFlag := flag.Int("port", 8080, "Port for web server")
-	noBrowserFlag := flag.Bool("no-browser", false, "Disable automatically opening web browser")
-	installFlag := flag.Bool("install", false, "Install to Windows Startup folder for automatic boot launch")
-	uninstallFlag := flag.Bool("uninstall", false, "Uninstall from Windows Startup folder")
-	flag.Parse()
-
-	// Handle Windows startup setup or removal if requested
-	if *installFlag {
-		if err := sysutil.ConfigureWindowsStartup(true); err != nil {
-			fmt.Printf("Error installing startup task: %v\n", err)
-			os.Exit(1)
-		}
-		fmt.Println("Local Archive has been installed to start automatically on Windows boot.")
-		return
-	}
-	if *uninstallFlag {
-		if err := sysutil.ConfigureWindowsStartup(false); err != nil {
-			fmt.Printf("Error removing startup task: %v\n", err)
-			os.Exit(1)
-		}
-		fmt.Println("Local Archive automatic startup has been removed.")
-		return
-	}
-
-	dataDir := sysutil.GetDataDir()
-	uploadDir := filepath.Join(dataDir, "uploads")
-	dbPath := filepath.Join(dataDir, "archive.db")
-
-	if err := os.MkdirAll(uploadDir, 0755); err != nil {
-		log.Fatalf("Could not create data directory at %s: %v", dataDir, err)
-	}
-
-	db, err := database.Open(dbPath)
+	isDev := os.Getenv("ENV") == "development"
+	paths, err := sysutil.ResolveDataPaths(isDev)
 	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+		log.Fatalf("Failed to initialize storage paths: %v", err)
 	}
-	defer db.Close()
 
-	tmpl, err := template.ParseFS(embeddedFS, "templates/*.html")
+	db, err := database.Open(paths.DBPath)
 	if err != nil {
-		log.Fatalf("Failed to parse HTML templates: %v", err)
+		log.Fatalf("Failed to open database at %s: %v", paths.DBPath, err)
 	}
 
-	app := handlers.NewApp(db, tmpl, uploadDir, dbPath, *portFlag, !*noBrowserFlag, embeddedFS)
-	if err := app.Start(); err != nil {
-		log.Fatalf("Server error: %v", err)
+	app := NewApp(db, paths)
+
+	// Custom asset handler to stream uploaded files (PDFs, images) securely to the webview
+	customFileServer := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/view-file") {
+			filename := r.URL.Query().Get("file")
+			if filename == "" {
+				http.NotFound(w, r)
+				return
+			}
+			cleanPath := filepath.Clean(filepath.Join(paths.UploadDir, filepath.Base(filename)))
+			if _, err := os.Stat(cleanPath); os.IsNotExist(err) {
+				http.NotFound(w, r)
+				return
+			}
+			http.ServeFile(w, r, cleanPath)
+			return
+		}
+		http.NotFound(w, r)
+	})
+
+	err = wails.Run(&options.App{
+		Title:             "الأرشيف المحلي",
+		Width:             1240,
+		Height:            820,
+		MinWidth:          960,
+		MinHeight:         640,
+		Frameless:         false,
+		StartHidden:       false,
+		HideWindowOnClose: false,
+		BackgroundColour:  &options.RGBA{R: 0, G: 0, B: 0, A: 255},
+		AssetServer: &assetserver.Options{
+			Assets:  assets,
+			Handler: customFileServer,
+		},
+		OnStartup:  app.startup,
+		OnShutdown: app.shutdown,
+		Bind: []interface{}{
+			app,
+		},
+		Linux: &linux.Options{
+			Icon:        appIcon,
+			ProgramName: "local-archive",
+		},
+		Windows: &windows.Options{
+			WebviewIsTransparent: false,
+			WindowIsTranslucent:  false,
+			DisableWindowIcon:    false,
+		},
+	})
+
+	if err != nil {
+		fmt.Printf("Wails runtime error: %v\n", err)
 	}
 }

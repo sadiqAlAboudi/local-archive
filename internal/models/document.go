@@ -123,30 +123,3 @@ type ViewDocData struct {
 	Doc Document
 }
 
-// LoginViewData holds data for the login template.
-type LoginViewData struct {
-	Error             string
-	ShowDefaultNotice bool
-}
-
-// ChangeCredsViewData holds data for changing credentials.
-type ChangeCredsViewData struct {
-	Error           string
-	CurrentUsername string
-}
-
-// User represents a system administrator/user.
-type User struct {
-	ID                     int64
-	Username               string
-	PasswordHash           string
-	MustChangeCredentials  int
-	CreatedAt              time.Time
-}
-
-// Session represents an active login session.
-type Session struct {
-	Token     string
-	UserID    int64
-	ExpiresAt time.Time
-}
