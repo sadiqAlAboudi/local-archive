@@ -13,7 +13,7 @@ type Document struct {
 	DocType          string    `json:"doc_type"`          // "incoming" (كتاب وارد) or "outgoing" (كتاب صادر)
 	SerialNumber     string    `json:"serial_number"`     // رقم التسلسل (لوارد)
 	IssueNumber      string    `json:"issue_number"`      // العدد (لصادر)
-	DocDate          string    `json:"doc_date"`          // التاريخ (تاريخ التسجيل للوارد، أو تاريخ الصدور للصادر)
+	DocDate          string    `json:"doc_date"`          // التاريخ (تاريخ ورود الكتاب للوارد، أو تاريخ الصدور للصادر)
 	Department       string    `json:"department"`        // اسم الدائرة (الجهة الوارد منها أو الجهة الصادر إليها)
 	LetterNumber     string    `json:"letter_number"`     // رقم الكتاب (لوارد)
 	LetterDate       string    `json:"letter_date"`       // تاريخ الكتاب (لوارد)
@@ -122,4 +122,3 @@ type IndexViewData struct {
 type ViewDocData struct {
 	Doc Document
 }
-

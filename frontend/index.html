@@ -193,7 +193,7 @@
         <thead>
           <tr>
             <th>نوع الوثيقة</th>
-            <th>رقم التسلسل / العدد</th>
+            <th>رقم التسلسل</th>
             <th>التاريخ</th>
             <th>اسم الدائرة / الجهة</th>
             <th>عدد وتاريخ الكتاب</th>
@@ -248,9 +248,9 @@
           <input type="text" name="issue_number" placeholder="مثال: 567/ص">
         </label>
 
-        <!-- تاريخ التسجيل أو الصدور -->
+        <!-- تاريخ ورود الكتاب أو الصدور -->
         <label data-field="doc_date">
-          <span data-label-incoming>تاريخ التسجيل *</span>
+          <span data-label-incoming>تاريخ ورود الكتاب *</span>
           <span data-label-outgoing hidden>تاريخ الصدور *</span>
           <input type="date" name="doc_date" required>
         </label>
@@ -258,19 +258,19 @@
         <!-- اسم الدائرة أو الجهة -->
         <label data-field="department">
           <span data-label-incoming>اسم الدائرة (الجهة الوارد منها) *</span>
-          <span data-label-outgoing hidden>الجهة الصادر إليها (اسم الدائرة) *</span>
+          <span data-label-outgoing hidden>اسم الدائرة (الجهة الصادر إليها)*</span>
           <input type="text" name="department" required
             placeholder="مثال: وزارة التربية والتعليم / دائرة الشؤون الإدارية">
         </label>
 
-        <!-- رقم وتاريخ كتاب الجهة للوارد فقط -->
+        <!-- رقم وتاريخ الكتاب الوارد للوارد فقط -->
         <label data-field="letter_number">
-          رقم كتاب الجهة *
+          عدد الكتاب الوارد *
           <input type="text" name="letter_number" required placeholder="مثال: 4589/ب">
         </label>
 
         <label data-field="letter_date">
-          تاريخ كتاب الجهة *
+          تاريخ الكتاب الوارد *
           <input type="date" name="letter_date" required>
         </label>
 
@@ -340,24 +340,24 @@
         </label>
 
         <label data-field="doc_date">
-          <span data-label-incoming>تاريخ التسجيل *</span>
+          <span data-label-incoming>تاريخ ورود الكتاب *</span>
           <span data-label-outgoing hidden>تاريخ الصدور *</span>
           <input type="date" name="doc_date" required>
         </label>
 
         <label data-field="department">
           <span data-label-incoming>اسم الدائرة (الجهة الوارد منها) *</span>
-          <span data-label-outgoing hidden>الجهة الصادر إليها (اسم الدائرة) *</span>
+          <span data-label-outgoing hidden>اسم الدائرة (الجهة الصادر إليها)*</span>
           <input type="text" name="department" required>
         </label>
 
         <label data-field="letter_number">
-          رقم كتاب الجهة *
+          عدد الكتاب الوارد *
           <input type="text" name="letter_number">
         </label>
 
         <label data-field="letter_date">
-          تاريخ كتاب الجهة *
+          تاريخ الكتاب الوارد *
           <input type="date" name="letter_date">
         </label>
 

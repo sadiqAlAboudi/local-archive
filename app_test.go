@@ -143,8 +143,8 @@ func TestWailsAppCRUD(t *testing.T) {
 
 	// 8. Test GetAppVersion
 	version := app.GetAppVersion()
-	if version != "0.1.2" {
-		t.Fatalf("expected version 0.1.2, got %s", version)
+	if version != "0.1.5" {
+		t.Fatalf("expected version 0.1.5, got %s", version)
 	}
 }
 

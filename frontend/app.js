@@ -168,21 +168,35 @@ async function loadDocuments() {
 
     docs.forEach(doc => {
       const isOutgoing = doc.doc_type === "outgoing";
-      const refNum = isOutgoing ? doc.issue_number : doc.serial_number;
       const typeArabic = isOutgoing ? "كتاب صادر" : "كتاب وارد";
       const fileBadge = doc.file_type === "pdf" ? "PDF" : "صورة";
+
+      // Column 2 (رقم التسلسل): only incoming documents have an archive serial number
+      const serialDisplay = !isOutgoing && doc.serial_number 
+        ? escapeHtml(doc.serial_number) 
+        : "—";
+
+      // Column 3 (التاريخ): only incoming documents display receipt date here
+      const dateDisplay = !isOutgoing && doc.doc_date 
+        ? `<time datetime="${doc.doc_date}">${doc.doc_date}</time>` 
+        : "—";
+
+      // Column 5 (عدد وتاريخ الكتاب):
+      // - Incoming: letter_number & letter_date
+      // - Outgoing: issue_number & doc_date
+      const bookNumber = isOutgoing ? doc.issue_number : doc.letter_number;
+      const bookDate = isOutgoing ? doc.doc_date : doc.letter_date;
+      const bookDisplay = bookNumber 
+        ? `${escapeHtml(bookNumber)}${bookDate ? `<br><small>${bookDate}</small>` : ""}` 
+        : "—";
 
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td><mark value="${doc.doc_type}">${typeArabic}</mark></td>
-        <td><strong>${escapeHtml(refNum)}</strong></td>
-        <td><time datetime="${doc.doc_date}">${doc.doc_date}</time></td>
+        <td><strong>${serialDisplay}</strong></td>
+        <td>${dateDisplay}</td>
         <td>${escapeHtml(doc.department)}</td>
-        <td>
-          ${!isOutgoing && doc.letter_number 
-            ? `${escapeHtml(doc.letter_number)}${doc.letter_date ? `<br><small>${doc.letter_date}</small>` : ""}` 
-            : "—"}
-        </td>
+        <td>${bookDisplay}</td>
         <td>
           <a href="#" value="title-link" class="preview-link" data-id="${doc.id}">
             ${escapeHtml(doc.subject)}
@@ -253,10 +267,10 @@ function openPreview(doc) {
   dl.innerHTML = `
     <div><dt>نوع الوثيقة</dt><dd><mark value="${doc.doc_type}">${isOutgoing ? "كتاب صادر" : "كتاب وارد"}</mark></dd></div>
     <div><dt>${isOutgoing ? "العدد" : "رقم التسلسل"}</dt><dd><strong>${escapeHtml(isOutgoing ? doc.issue_number : doc.serial_number)}</strong></dd></div>
-    <div><dt>${isOutgoing ? "تاريخ الصدور" : "تاريخ التسجيل"}</dt><dd>${doc.doc_date}</dd></div>
+    <div><dt>${isOutgoing ? "تاريخ الصدور" : "تاريخ ورود الكتاب"}</dt><dd>${doc.doc_date}</dd></div>
     <div><dt>${isOutgoing ? "الجهة الصادر إليها" : "اسم الدائرة"}</dt><dd>${escapeHtml(doc.department)}</dd></div>
-    ${!isOutgoing && doc.letter_number ? `<div><dt>رقم كتاب الجهة</dt><dd>${escapeHtml(doc.letter_number)}</dd></div>` : ""}
-    ${!isOutgoing && doc.letter_date ? `<div><dt>تاريخ كتاب الجهة</dt><dd>${escapeHtml(doc.letter_date)}</dd></div>` : ""}
+    ${!isOutgoing && doc.letter_number ? `<div><dt>عدد الكتاب الوارد</dt><dd>${escapeHtml(doc.letter_number)}</dd></div>` : ""}
+    ${!isOutgoing && doc.letter_date ? `<div><dt>تاريخ الكتاب الوارد</dt><dd>${escapeHtml(doc.letter_date)}</dd></div>` : ""}
     <div><dt>الموضوع</dt><dd>${escapeHtml(doc.subject)}</dd></div>
     <div><dt>الملف الأصلي</dt><dd>${escapeHtml(doc.original_filename)}</dd></div>
   `;
