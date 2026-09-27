@@ -7,6 +7,7 @@
 }
 
 :root {
+  color-scheme: dark;
   --bg-main: #000000;
   --bg-surface: #0f0f0f;
   --bg-surface-elevated: #1a1a1a;
@@ -68,6 +69,22 @@ mark[value="outgoing"] {
   background-color: rgba(16, 185, 129, 0.15);
   color: #34d399;
   border-color: rgba(16, 185, 129, 0.35);
+}
+
+/* Date input calendar indicator (white icon in dark theme) */
+input[type="date"] {
+  color-scheme: dark;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: brightness(0) invert(1);
+  opacity: 0.85;
+  transition: opacity 0.15s ease;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
 }
 
 /* Universal SVG constraint so unconstrained icons never blow up */
