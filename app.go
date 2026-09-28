@@ -200,6 +200,13 @@ func (a *App) CreateDocument(input CreateDocumentInput) (*models.Document, error
 		return nil, fmt.Errorf("حقل رقم التسلسل مطلوب للكتب الواردة")
 	}
 
+	if docType == "incoming" && newDoc.DocDate != "" && newDoc.LetterDate != "" {
+		if isDocDateBeforeLetterDate(newDoc.DocDate, newDoc.LetterDate) {
+			os.Remove(dstPath)
+			return nil, fmt.Errorf("تاريخ ورود الكتاب (%s) لا يمكن أن يكون قبل تاريخ الكتاب الوارد (%s)", newDoc.DocDate, newDoc.LetterDate)
+		}
+	}
+
 	if err := a.db.CreateDocument(&newDoc); err != nil {
 		os.Remove(dstPath)
 		return nil, fmt.Errorf("فشل تسجيل الوثيقة في قاعدة البيانات: %w", err)
@@ -207,6 +214,16 @@ func (a *App) CreateDocument(input CreateDocumentInput) (*models.Document, error
 
 	_ = srcStat
 	return &newDoc, nil
+}
+
+// isDocDateBeforeLetterDate checks if docDate is chronologically before letterDate.
+func isDocDateBeforeLetterDate(docDate, letterDate string) bool {
+	dDate, err1 := time.Parse("2006-01-02", strings.TrimSpace(docDate))
+	lDate, err2 := time.Parse("2006-01-02", strings.TrimSpace(letterDate))
+	if err1 == nil && err2 == nil {
+		return dDate.Before(lDate)
+	}
+	return strings.TrimSpace(docDate) < strings.TrimSpace(letterDate)
 }
 
 // UpdateDocumentInput defines fields for updating an existing document.
@@ -252,6 +269,12 @@ func (a *App) UpdateDocument(input UpdateDocumentInput) error {
 		LetterNumber: letterNumber,
 		LetterDate:   letterDate,
 		Subject:      strings.TrimSpace(input.Subject),
+	}
+
+	if docType == "incoming" && doc.DocDate != "" && doc.LetterDate != "" {
+		if isDocDateBeforeLetterDate(doc.DocDate, doc.LetterDate) {
+			return fmt.Errorf("تاريخ ورود الكتاب (%s) لا يمكن أن يكون قبل تاريخ الكتاب الوارد (%s)", doc.DocDate, doc.LetterDate)
+		}
 	}
 
 	return a.db.UpdateDocument(&doc)
@@ -377,6 +400,39 @@ func (a *App) RestoreBackup() error {
 
 	_ = a.db.SetLastBackupTime(time.Now())
 	return nil
+}
+
+// CheckDatabaseIntegrity verifies the integrity of the database using SQLite PRAGMA integrity_check.
+func (a *App) CheckDatabaseIntegrity() (string, error) {
+	if a.db == nil {
+		return "قاعدة البيانات غير متصلة", fmt.Errorf("database handle is nil")
+	}
+	if err := a.db.CheckIntegrity(); err != nil {
+		return err.Error(), err
+	}
+	return "قاعدة البيانات سليمة ولا توجد أخطاء", nil
+}
+
+// RecoverDatabase runs the recovery process on the database, preserving a backup of corrupt data.
+func (a *App) RecoverDatabase() (*database.RecoveryResult, error) {
+	a.backupMutex.Lock()
+	defer a.backupMutex.Unlock()
+
+	if a.db != nil {
+		_ = a.db.Close()
+	}
+
+	result, err := database.RecoverDatabase(a.paths.DBPath)
+	if err != nil {
+		_ = a.db.Reopen(a.paths.DBPath)
+		return nil, fmt.Errorf("فشلت عملية استرجاع قاعدة البيانات: %w", err)
+	}
+
+	if err := a.db.Reopen(a.paths.DBPath); err != nil {
+		return nil, fmt.Errorf("تم استرجاع البيانات بنجاح ولكن تعذر إعادة الاتصال بقاعدة البيانات: %w", err)
+	}
+
+	return result, nil
 }
 
 // GetAppVersion returns the current application version.

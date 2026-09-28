@@ -349,6 +349,25 @@ async function handleRestoreBackup() {
   }
 }
 
+// Handle Database Recovery
+async function handleRecoverDatabase() {
+  const confirmed = confirm("هل ترغب في فحص وإصلاح قاعدة البيانات؟\nسيقوم البرنامج بحفظ نسخة احتياطية من الملف الحالي تلقائياً واسترجاع كافة البيانات والوثائق الممكنة.");
+  if (!confirmed) return;
+
+  try {
+    const result = await window.go.main.App.RecoverDatabase();
+    if (result && result.success) {
+      showAlert(result.message || "تم استرجاع وإصلاح قاعدة البيانات بنجاح", "success");
+      await refreshStats();
+      await loadDocuments();
+    } else {
+      showAlert("تعذر إصلاح قاعدة البيانات بشكل كامل", "error");
+    }
+  } catch (err) {
+    showAlert(`فشل إصلاح قاعدة البيانات: ${err}`, "error");
+  }
+}
+
 // Initialize Application
 document.addEventListener("DOMContentLoaded", () => {
   // Setup dialog closing helpers
@@ -433,6 +452,13 @@ document.addEventListener("DOMContentLoaded", () => {
       source_path: addSourcePath.value,
     };
 
+    if (payload.doc_type === "incoming" && payload.doc_date && payload.letter_date) {
+      if (payload.doc_date < payload.letter_date) {
+        alert("تاريخ ورود الكتاب (" + payload.doc_date + ") لا يمكن أن يكون قبل تاريخ الكتاب الوارد (" + payload.letter_date + ")");
+        return;
+      }
+    }
+
     try {
       await window.go.main.App.CreateDocument(payload);
       addDialog.close();
@@ -461,6 +487,13 @@ document.addEventListener("DOMContentLoaded", () => {
       letter_date: formData.get("letter_date") || "",
       subject: formData.get("subject") || "",
     };
+
+    if (payload.doc_type === "incoming" && payload.doc_date && payload.letter_date) {
+      if (payload.doc_date < payload.letter_date) {
+        alert("تاريخ ورود الكتاب (" + payload.doc_date + ") لا يمكن أن يكون قبل تاريخ الكتاب الوارد (" + payload.letter_date + ")");
+        return;
+      }
+    }
 
     try {
       await window.go.main.App.UpdateDocument(payload);
@@ -525,9 +558,13 @@ document.addEventListener("DOMContentLoaded", () => {
     loadDocuments();
   });
 
-  // Backup & Restore header buttons
+  // Backup & Restore & Repair header buttons
   document.getElementById("btn-backup").addEventListener("click", handleCreateBackup);
   document.getElementById("btn-restore").addEventListener("click", handleRestoreBackup);
+  const btnRepair = document.getElementById("btn-repair-db");
+  if (btnRepair) {
+    btnRepair.addEventListener("click", handleRecoverDatabase);
+  }
 
   // Preview dialog controls
   document.getElementById("btn-print-preview").addEventListener("click", () => {

@@ -27,6 +27,24 @@ func Open(dbPath string) (*DB, error) {
 	database := &DB{db: db}
 	if err := database.Init(); err != nil {
 		db.Close()
+		if IsCorruptError(err) {
+			_, recErr := RecoverDatabase(dbPath)
+			if recErr != nil {
+				return nil, fmt.Errorf("قاعدة البيانات تالفة (11) وفشل الإصلاح التلقائي: %v (الخطأ الأصلي: %w)", recErr, err)
+			}
+			// Re-attempt opening after recovery
+			recConnStr := fmt.Sprintf("%s?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)", dbPath)
+			recDB, recOpenErr := sql.Open("sqlite", recConnStr)
+			if recOpenErr != nil {
+				return nil, fmt.Errorf("failed to open recovered database: %w", recOpenErr)
+			}
+			database.db = recDB
+			if err := database.Init(); err != nil {
+				recDB.Close()
+				return nil, fmt.Errorf("failed to initialize recovered database: %w", err)
+			}
+			return database, nil
+		}
 		return nil, fmt.Errorf("failed to initialize database: %w", err)
 	}
 
@@ -57,7 +75,20 @@ func (d *DB) Reopen(dbPath string) error {
 		return fmt.Errorf("failed to open database at %s: %w", dbPath, err)
 	}
 	d.db = newDB
-	return d.Init()
+	if err := d.Init(); err != nil {
+		if IsCorruptError(err) {
+			_, recErr := RecoverDatabase(dbPath)
+			if recErr == nil {
+				recDB, recOpenErr := sql.Open("sqlite", connStr)
+				if recOpenErr == nil {
+					d.db = recDB
+					return d.Init()
+				}
+			}
+		}
+		return err
+	}
+	return nil
 }
 
 // Init sets up tables and runs schema migrations.

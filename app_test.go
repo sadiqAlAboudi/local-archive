@@ -148,3 +148,122 @@ func TestWailsAppCRUD(t *testing.T) {
 		t.Fatalf("expected version %s, got %s", updater.CurrentVersion, version)
 	}
 }
+
+func TestIncomingDocumentDateValidation(t *testing.T) {
+	app, tempDir := setupTestApp(t)
+	defer os.RemoveAll(tempDir)
+	defer app.shutdown(context.TODO())
+
+	dummyFilePath := filepath.Join(tempDir, "test_doc.pdf")
+	if err := os.WriteFile(dummyFilePath, []byte("%PDF-1.4 official letter"), 0644); err != nil {
+		t.Fatalf("failed to write test file: %v", err)
+	}
+
+	// 1. DocDate < LetterDate must fail
+	_, err := app.CreateDocument(CreateDocumentInput{
+		DocType:      "incoming",
+		SerialNumber: "201/و",
+		DocDate:      "2026-09-20", // Before letter date
+		Department:   "وزارة الصحة",
+		LetterNumber: "554",
+		LetterDate:   "2026-09-25",
+		Subject:      "تجهيزات طبية",
+		SourcePath:   dummyFilePath,
+	})
+	if err == nil {
+		t.Fatalf("expected error when DocDate < LetterDate, but got nil")
+	}
+
+	// 2. DocDate == LetterDate must succeed
+	docEqual, err := app.CreateDocument(CreateDocumentInput{
+		DocType:      "incoming",
+		SerialNumber: "202/و",
+		DocDate:      "2026-09-25", // Equal
+		Department:   "وزارة الصحة",
+		LetterNumber: "555",
+		LetterDate:   "2026-09-25",
+		Subject:      "تجهيزات طبية 2",
+		SourcePath:   dummyFilePath,
+	})
+	if err != nil {
+		t.Fatalf("expected success when DocDate == LetterDate, got: %v", err)
+	}
+
+	// 3. UpdateDocument with DocDate < LetterDate must fail
+	err = app.UpdateDocument(UpdateDocumentInput{
+		ID:           docEqual.ID,
+		DocType:      "incoming",
+		SerialNumber: "202/و",
+		DocDate:      "2026-09-20", // Invalid date
+		Department:   "وزارة الصحة",
+		LetterNumber: "555",
+		LetterDate:   "2026-09-25",
+		Subject:      "تعديل",
+	})
+	if err == nil {
+		t.Fatalf("expected error on UpdateDocument when DocDate < LetterDate, but got nil")
+	}
+
+	// 4. UpdateDocument with DocDate >= LetterDate must succeed
+	err = app.UpdateDocument(UpdateDocumentInput{
+		ID:           docEqual.ID,
+		DocType:      "incoming",
+		SerialNumber: "202/و",
+		DocDate:      "2026-09-28", // Valid date
+		Department:   "وزارة الصحة",
+		LetterNumber: "555",
+		LetterDate:   "2026-09-25",
+		Subject:      "تعديل سليم",
+	})
+	if err != nil {
+		t.Fatalf("expected success on UpdateDocument when DocDate >= LetterDate, got: %v", err)
+	}
+}
+
+func TestAppDatabaseRecovery(t *testing.T) {
+	app, tempDir := setupTestApp(t)
+	defer os.RemoveAll(tempDir)
+	defer app.shutdown(context.TODO())
+
+	// 1. Verify healthy check
+	msg, err := app.CheckDatabaseIntegrity()
+	if err != nil {
+		t.Fatalf("expected healthy integrity check, got: %v (%s)", err, msg)
+	}
+
+	// 2. Insert test document
+	dummyFilePath := filepath.Join(tempDir, "test_doc.pdf")
+	_ = os.WriteFile(dummyFilePath, []byte("%PDF-1.4 official letter"), 0644)
+	_, err = app.CreateDocument(CreateDocumentInput{
+		DocType:      "incoming",
+		SerialNumber: "301/و",
+		DocDate:      "2026-09-28",
+		Department:   "وزارة الإعمار",
+		LetterNumber: "777",
+		LetterDate:   "2026-09-25",
+		Subject:      "مشروع الإسكان",
+		SourcePath:   dummyFilePath,
+	})
+	if err != nil {
+		t.Fatalf("CreateDocument failed: %v", err)
+	}
+
+	// 3. Trigger recovery via App
+	res, err := app.RecoverDatabase()
+	if err != nil {
+		t.Fatalf("RecoverDatabase failed: %v", err)
+	}
+	if !res.Success {
+		t.Fatalf("expected recovery success, got false")
+	}
+
+	// 4. Verify app continues to function with recovered database
+	stats, err := app.GetStats()
+	if err != nil {
+		t.Fatalf("GetStats failed after recovery: %v", err)
+	}
+	if stats.TotalDocs != 1 {
+		t.Errorf("expected 1 document after recovery, got %d", stats.TotalDocs)
+	}
+}
+
