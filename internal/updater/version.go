@@ -7,7 +7,7 @@ import (
 
 // CurrentVersion is the active version of LocalArchive.
 // This can be set at compile time via -ldflags "-X local-archive/internal/updater.CurrentVersion=x.y.z".
-var CurrentVersion = "0.1.7"
+var CurrentVersion = "0.1.8"
 
 // CompareVersions compares two semantic version strings (e.g. "0.1.2", "v0.1.3", "1.0.0-rc1").
 // Returns:

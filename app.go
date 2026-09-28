@@ -16,6 +16,7 @@ import (
 	"local-archive/internal/backup"
 	"local-archive/internal/database"
 	"local-archive/internal/models"
+	"local-archive/internal/optimizer"
 	"local-archive/internal/sysutil"
 	"local-archive/internal/updater"
 
@@ -137,16 +138,30 @@ func (a *App) CreateDocument(input CreateDocumentInput) (*models.Document, error
 	storageName := fmt.Sprintf("%d_%s%s", time.Now().Unix(), hex.EncodeToString(randBytes), ext)
 	dstPath := filepath.Join(a.paths.UploadDir, storageName)
 
-	dst, err := os.Create(dstPath)
-	if err != nil {
-		return nil, fmt.Errorf("فشل حفظ الملف في مجلد التخزين: %w", err)
-	}
-	defer dst.Close()
+	// Close source file before optimizing to release read handles
+	_ = srcFile.Close()
 
-	writtenBytes, err := io.Copy(dst, srcFile)
+	if err := optimizer.OptimizeFile(cleanSource, dstPath); err != nil {
+		return nil, fmt.Errorf("فشل معالجة وحفظ الملف: %w", err)
+	}
+
+	dstStat, err := os.Stat(dstPath)
 	if err != nil {
-		os.Remove(dstPath)
-		return nil, fmt.Errorf("فشل نسخ محتوى الملف: %w", err)
+		_ = os.Remove(dstPath)
+		return nil, fmt.Errorf("تعذر قراءة بيانات الملف المحفوظ: %w", err)
+	}
+	writtenBytes := dstStat.Size()
+
+	// Detect MIME type from the saved file (in case an opaque PNG was converted to JPEG)
+	if f, err := os.Open(dstPath); err == nil {
+		header := make([]byte, 512)
+		if n, _ := f.Read(header); n > 0 {
+			detectedMime := http.DetectContentType(header[:n])
+			if detectedMime != "application/octet-stream" {
+				mimeType = detectedMime
+			}
+		}
+		_ = f.Close()
 	}
 
 	docType := strings.TrimSpace(input.DocType)
