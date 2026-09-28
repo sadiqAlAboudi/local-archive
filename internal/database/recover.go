@@ -128,6 +128,7 @@ func attemptVacuumRecovery(sourcePath, destPath string, result *RecoveryResult) 
 	if err != nil {
 		return err
 	}
+	srcDB.SetMaxOpenConns(1)
 	defer srcDB.Close()
 
 	// Try reindexing
@@ -145,6 +146,7 @@ func attemptVacuumRecovery(sourcePath, destPath string, result *RecoveryResult) 
 	if err != nil {
 		return err
 	}
+	checkDB.SetMaxOpenConns(1)
 	defer checkDB.Close()
 
 	var checkRes string
@@ -175,6 +177,7 @@ func attemptRowSalvage(sourcePath, destPath string, result *RecoveryResult) erro
 	if err != nil {
 		return err
 	}
+	cleanDB.SetMaxOpenConns(1)
 	defer cleanDB.Close()
 
 	initSchema := []string{
@@ -214,6 +217,7 @@ func attemptRowSalvage(sourcePath, destPath string, result *RecoveryResult) erro
 	if err != nil {
 		return err
 	}
+	srcDB.SetMaxOpenConns(1)
 	defer srcDB.Close()
 
 	// Gather known IDs

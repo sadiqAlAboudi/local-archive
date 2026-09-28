@@ -179,3 +179,72 @@ func TestBackupTimeTracking(t *testing.T) {
 		t.Errorf("expected backup time %v, got %v", targetTime, got)
 	}
 }
+
+func TestWALTruncateOnClose(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "archive_wal_test_*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	dbPath := filepath.Join(tempDir, "test_wal.db")
+	db, err := Open(dbPath)
+	if err != nil {
+		t.Fatalf("failed to open test db: %v", err)
+	}
+
+	doc := &models.Document{
+		DocType:      "incoming",
+		SerialNumber: "WAL-1",
+		DocDate:      "2026-09-28",
+		Department:   "قسم الحاسبة",
+		Subject:      "فحص تفريغ WAL",
+		Filename:     "wal_test.pdf",
+	}
+	if err := db.CreateDocument(doc); err != nil {
+		t.Fatalf("failed to insert doc: %v", err)
+	}
+
+	// Close database handle - should execute PRAGMA wal_checkpoint(TRUNCATE)
+	if err := db.Close(); err != nil {
+		t.Fatalf("db.Close failed: %v", err)
+	}
+
+	// In SQLite WAL mode with TRUNCATE, the WAL file if present should be 0 bytes
+	walPath := dbPath + "-wal"
+	if fi, err := os.Stat(walPath); err == nil {
+		if fi.Size() > 0 {
+			t.Errorf("expected WAL file to be truncated to 0 bytes on close, but size is %d", fi.Size())
+		}
+	}
+
+	// Reopen and ensure data is safely persisted
+	db2, err := Open(dbPath)
+	if err != nil {
+		t.Fatalf("failed to reopen db: %v", err)
+	}
+	defer db2.Close()
+
+	retrieved, err := db2.GetDocumentByID(doc.ID)
+	if err != nil {
+		t.Fatalf("failed to retrieve doc after close: %v", err)
+	}
+	if retrieved.SerialNumber != "WAL-1" {
+		t.Errorf("expected serial 'WAL-1', got '%s'", retrieved.SerialNumber)
+	}
+}
+
+func TestInitUserVersion(t *testing.T) {
+	db, tempDir := setupTestDB(t)
+	defer os.RemoveAll(tempDir)
+	defer db.Close()
+
+	var uv int
+	if err := db.RawDB().QueryRow("PRAGMA user_version;").Scan(&uv); err != nil {
+		t.Fatalf("failed to read user_version: %v", err)
+	}
+	if uv != 1 {
+		t.Errorf("expected user_version to be 1 after Init, got %d", uv)
+	}
+}
+

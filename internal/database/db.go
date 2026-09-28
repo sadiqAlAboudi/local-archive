@@ -16,31 +16,51 @@ type DB struct {
 	db *sql.DB
 }
 
-// Open connects to SQLite with WAL mode and busy timeout.
-func Open(dbPath string) (*DB, error) {
-	connStr := fmt.Sprintf("%s?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)", dbPath)
+// connString constructs a hardened SQLite connection string:
+// - busy_timeout(5000): waits up to 5 seconds when busy.
+// - journal_mode(WAL): enables concurrent readers without blocking writes.
+// - synchronous(FULL): ensures OS flushes physical disk buffers to prevent torn writes on reboot/power loss.
+// - wal_autocheckpoint(100): checkpoints every 100 pages to prevent WAL file bloat.
+func connString(dbPath string) string {
+	return fmt.Sprintf("%s?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=synchronous(FULL)&_pragma=wal_autocheckpoint(100)", dbPath)
+}
+
+// openDatabase opens a SQLite database and enforces a single-writer connection pool
+// to eliminate concurrency race conditions on Windows.
+func openDatabase(connStr string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite", connStr)
+	if err != nil {
+		return nil, err
+	}
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(1)
+	return db, nil
+}
+
+// Open connects to SQLite with WAL mode, busy timeout, full synchronous flushes, and single-writer concurrency.
+func Open(dbPath string) (*DB, error) {
+	connStr := connString(dbPath)
+	db, err := openDatabase(connStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
 	database := &DB{db: db}
 	if err := database.Init(); err != nil {
-		db.Close()
+		_ = database.Close()
 		if IsCorruptError(err) {
 			_, recErr := RecoverDatabase(dbPath)
 			if recErr != nil {
 				return nil, fmt.Errorf("قاعدة البيانات تالفة (11) وفشل الإصلاح التلقائي: %v (الخطأ الأصلي: %w)", recErr, err)
 			}
 			// Re-attempt opening after recovery
-			recConnStr := fmt.Sprintf("%s?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)", dbPath)
-			recDB, recOpenErr := sql.Open("sqlite", recConnStr)
+			recDB, recOpenErr := openDatabase(connStr)
 			if recOpenErr != nil {
 				return nil, fmt.Errorf("failed to open recovered database: %w", recOpenErr)
 			}
 			database.db = recDB
 			if err := database.Init(); err != nil {
-				recDB.Close()
+				_ = database.Close()
 				return nil, fmt.Errorf("failed to initialize recovered database: %w", err)
 			}
 			return database, nil
@@ -56,10 +76,23 @@ func (d *DB) RawDB() *sql.DB {
 	return d.db
 }
 
-// Close closes the database connection.
+// Close forces SQLite to checkpoint (truncate) all WAL pages and closes the database connection.
 func (d *DB) Close() error {
 	if d.db != nil {
-		return d.db.Close()
+		// Truncate the WAL file by folding all uncheckpointed changes back into the main database
+		_, _ = d.db.Exec("PRAGMA wal_checkpoint(TRUNCATE);")
+		err := d.db.Close()
+		d.db = nil
+		return err
+	}
+	return nil
+}
+
+// Checkpoint forces SQLite to flush all pending WAL changes into archive.db and truncates the WAL file.
+func (d *DB) Checkpoint() error {
+	if d.db != nil {
+		_, err := d.db.Exec("PRAGMA wal_checkpoint(TRUNCATE);")
+		return err
 	}
 	return nil
 }
@@ -67,10 +100,10 @@ func (d *DB) Close() error {
 // Reopen closes the current database connection and opens a new connection to dbPath.
 func (d *DB) Reopen(dbPath string) error {
 	if d.db != nil {
-		_ = d.db.Close()
+		_ = d.Close()
 	}
-	connStr := fmt.Sprintf("%s?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)", dbPath)
-	newDB, err := sql.Open("sqlite", connStr)
+	connStr := connString(dbPath)
+	newDB, err := openDatabase(connStr)
 	if err != nil {
 		return fmt.Errorf("failed to open database at %s: %w", dbPath, err)
 	}
@@ -79,7 +112,7 @@ func (d *DB) Reopen(dbPath string) error {
 		if IsCorruptError(err) {
 			_, recErr := RecoverDatabase(dbPath)
 			if recErr == nil {
-				recDB, recOpenErr := sql.Open("sqlite", connStr)
+				recDB, recOpenErr := openDatabase(connStr)
 				if recOpenErr == nil {
 					d.db = recDB
 					return d.Init()
@@ -123,9 +156,6 @@ func (d *DB) Init() error {
 			value TEXT
 		);`,
 		`INSERT OR IGNORE INTO settings (key, value) VALUES ('installed_at', CURRENT_TIMESTAMP);`,
-		// Clean up obsolete tables from legacy web application
-		`DROP TABLE IF EXISTS sessions;`,
-		`DROP TABLE IF EXISTS users;`,
 	}
 
 	for _, q := range queries {
@@ -134,10 +164,17 @@ func (d *DB) Init() error {
 		}
 	}
 
-	// Schema migrations for backward compatibility
-	_, _ = d.db.Exec("ALTER TABLE documents ADD COLUMN doc_type TEXT DEFAULT 'incoming';")
-	_, _ = d.db.Exec("ALTER TABLE documents ADD COLUMN issue_number TEXT DEFAULT '';")
-	_, _ = d.db.Exec("UPDATE documents SET doc_type = 'incoming' WHERE doc_type IS NULL OR doc_type = '';")
+	// Schema migrations for backward compatibility (only run if not previously migrated)
+	var userVersion int
+	_ = d.db.QueryRow("PRAGMA user_version;").Scan(&userVersion)
+	if userVersion < 1 {
+		_, _ = d.db.Exec("DROP TABLE IF EXISTS sessions;")
+		_, _ = d.db.Exec("DROP TABLE IF EXISTS users;")
+		_, _ = d.db.Exec("ALTER TABLE documents ADD COLUMN doc_type TEXT DEFAULT 'incoming';")
+		_, _ = d.db.Exec("ALTER TABLE documents ADD COLUMN issue_number TEXT DEFAULT '';")
+		_, _ = d.db.Exec("UPDATE documents SET doc_type = 'incoming' WHERE doc_type IS NULL OR doc_type = '';")
+		_, _ = d.db.Exec("PRAGMA user_version = 1;")
+	}
 
 	return nil
 }

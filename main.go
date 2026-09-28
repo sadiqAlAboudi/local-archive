@@ -1,13 +1,16 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"local-archive/internal/database"
 	"local-archive/internal/sysutil"
@@ -38,6 +41,17 @@ func main() {
 	}
 
 	app := NewApp(db, paths)
+
+	// Gracefully handle OS interrupt and termination signals to flush WAL before exit
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		if app != nil {
+			app.shutdown(context.Background())
+		}
+		os.Exit(0)
+	}()
 
 	// Custom asset handler to stream uploaded files (PDFs, images) securely to the webview
 	customFileServer := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -91,4 +105,7 @@ func main() {
 	if err != nil {
 		fmt.Printf("Wails runtime error: %v\n", err)
 	}
+
+	// Ensure database WAL is flushed and handles closed if wails exits
+	app.shutdown(context.Background())
 }
