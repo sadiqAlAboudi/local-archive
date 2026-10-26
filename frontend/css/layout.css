@@ -1,0 +1,191 @@
+/* Top Navigation Header */
+body > header {
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 0.85rem 1.5rem;
+}
+
+body > header nav {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+body > header nav h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+body > header nav h1 a {
+  color: var(--text-heading);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+body > header nav h1 a svg {
+  width: 24px;
+  height: 24px;
+  color: var(--text-muted);
+}
+
+body > header nav menu {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+body > header nav menu li {
+  display: flex;
+  align-items: center;
+}
+
+body > header nav menu button,
+body > header nav menu a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.95rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+body > header nav menu button svg,
+body > header nav menu a svg {
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  transition: color 0.15s ease;
+}
+
+body > header nav menu button:hover,
+body > header nav menu a:hover {
+  background-color: var(--bg-surface-hover);
+  border-color: var(--border-focus);
+  color: var(--text-heading);
+}
+
+body > header nav menu button:hover svg,
+body > header nav menu a:hover svg {
+  color: var(--text-heading);
+}
+
+body > header nav menu button:active,
+body > header nav menu a:active {
+  transform: translateY(1px);
+}
+
+body > header nav menu button[value="add"] {
+  background-color: var(--text-heading);
+  color: var(--bg-main);
+  border-color: var(--text-heading);
+}
+
+body > header nav menu button[value="add"] svg {
+  color: var(--bg-main);
+}
+
+body > header nav menu button[value="add"]:hover {
+  background-color: var(--text-muted);
+  border-color: var(--text-muted);
+  color: var(--bg-main);
+}
+
+body > header nav menu button[value="add"]:hover svg {
+  color: var(--bg-main);
+}
+
+body > header nav menu button[value="backup"] svg {
+  color: #38bdf8; /* Sky Blue */
+}
+
+body > header nav menu button[value="backup"]:hover {
+  background-color: var(--bg-surface-hover);
+  border-color: #38bdf8;
+  color: var(--text-heading);
+}
+
+body > header nav menu button[value="backup"]:hover svg {
+  color: #7dd3fc;
+}
+
+body > header nav menu button[value="restore"] svg {
+  color: #a78bfa; /* Violet */
+}
+
+body > header nav menu button[value="restore"]:hover {
+  background-color: var(--bg-surface-hover);
+  border-color: #a78bfa;
+  color: var(--text-heading);
+}
+
+body > header nav menu button[value="restore"]:hover svg {
+  color: #c4b5fd;
+}
+
+body > header nav menu button[value="repair"] svg {
+  color: #fbbf24; /* Amber */
+}
+
+body > header nav menu button[value="repair"]:hover {
+  background-color: var(--bg-surface-hover);
+  border-color: #fbbf24;
+  color: var(--text-heading);
+}
+
+body > header nav menu button[value="repair"]:hover svg {
+  color: #fde68a;
+}
+
+body > header nav menu button[value="update"] svg {
+  color: #34d399; /* Emerald Green */
+}
+
+body > header nav menu button[value="update"]:hover {
+  background-color: var(--bg-surface-hover);
+  border-color: #34d399;
+  color: var(--text-heading);
+}
+
+body > header nav menu button[value="update"]:hover svg {
+  color: #6ee7b7;
+}
+
+/* Main Container */
+body > main {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+/* Footer */
+body > footer {
+  border-top: 1px solid var(--border);
+  padding: 1.25rem;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  margin-top: auto;
+}

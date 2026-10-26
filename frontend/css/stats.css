@@ -1,0 +1,51 @@
+/* Archive Statistics */
+section[aria-label="Archive Statistics"] {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+section[aria-label="Archive Statistics"] article {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+section[aria-label="Archive Statistics"] article figure {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+section[aria-label="Archive Statistics"] article figure svg {
+  width: 22px;
+  height: 22px;
+}
+
+section[aria-label="Archive Statistics"] article header {
+  display: flex;
+  flex-direction: column;
+}
+
+section[aria-label="Archive Statistics"] article header h3 {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+section[aria-label="Archive Statistics"] article header p {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-heading);
+  line-height: 1.2;
+}

@@ -1,0 +1,185 @@
+/* Documents Archive Section */
+section[aria-label="Documents Archive"] {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+section[aria-label="Documents Archive"] header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+section[aria-label="Documents Archive"] header h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-heading);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+section[aria-label="Documents Archive"] header h2 mark {
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+}
+
+/* Empty State */
+article[aria-label="Empty Archive"] {
+  background-color: var(--bg-surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  padding: 3rem 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+article[aria-label="Empty Archive"] svg {
+  width: 48px;
+  height: 48px;
+  color: var(--text-dim);
+}
+
+article[aria-label="Empty Archive"] h3 {
+  font-size: 1.15rem;
+  color: var(--text-heading);
+}
+
+article[aria-label="Empty Archive"] p {
+  color: var(--text-muted);
+  max-width: 400px;
+  font-size: 0.9rem;
+}
+
+article[aria-label="Empty Archive"] button {
+  margin-top: 0.5rem;
+  background-color: var(--text-heading);
+  color: var(--bg-main);
+  border: none;
+  padding: 0.65rem 1.25rem;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+article[aria-label="Empty Archive"] button:hover {
+  background-color: var(--text-muted);
+}
+
+/* Data Table Layout for Structured Arabic Archive */
+#docs-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+#docs-table thead {
+  background-color: var(--bg-surface-elevated);
+}
+
+#docs-table thead tr th {
+  padding: 0.85rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+#docs-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+#docs-table tbody tr:not(:last-child) td {
+  border-bottom: 1px solid var(--border);
+}
+
+#docs-table tbody tr:hover {
+  background-color: var(--bg-surface-hover);
+}
+
+#docs-table tbody tr td {
+  padding: 0.85rem 1rem;
+  font-size: 0.9rem;
+  color: var(--text-main);
+  vertical-align: middle;
+}
+
+/* Document preview link */
+#docs-table tbody tr td a[value="title-link"] {
+  color: var(--text-heading);
+  font-weight: 600;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+#docs-table tbody tr td a[value="title-link"]:hover {
+  text-decoration: underline;
+}
+
+/* Action Buttons inside Table */
+#docs-table tbody tr td menu {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+#docs-table tbody tr td menu li {
+  display: flex;
+}
+
+#docs-table tbody tr td menu a,
+#docs-table tbody tr td menu button {
+  background-color: transparent;
+  border: 1px solid var(--border);
+  padding: 0.35rem 0.55rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--text-muted);
+  transition: all 0.15s ease;
+}
+
+#docs-table tbody tr td menu a svg,
+#docs-table tbody tr td menu button svg {
+  width: 14px;
+  height: 14px;
+}
+
+#docs-table tbody tr td menu a:hover,
+#docs-table tbody tr td menu button:hover {
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-heading);
+  border-color: var(--border-focus);
+}
+
+#docs-table tbody tr td menu button[value="delete"] {
+  color: var(--danger);
+}
+
+#docs-table tbody tr td menu button[value="delete"]:hover {
+  background-color: rgba(220, 38, 38, 0.12);
+  border-color: var(--danger);
+}

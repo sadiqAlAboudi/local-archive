@@ -1,0 +1,287 @@
+/* Search and Date Filter Section */
+section[role="search"] {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+/* Document Type Filter Navigation */
+section[role="search"] nav[data-filter="doc-type"] {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+section[role="search"] nav[data-filter="doc-type"] a {
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background-color: var(--bg-surface-elevated);
+  transition: all 0.15s ease;
+}
+
+section[role="search"] nav[data-filter="doc-type"] a:hover {
+  color: var(--text-heading);
+  background-color: var(--bg-surface-hover);
+}
+
+section[role="search"] nav[data-filter="doc-type"] a[aria-current="page"] {
+  color: var(--text-heading);
+  background-color: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+/* Search Form */
+section[role="search"] form {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+section[role="search"] form fieldset {
+  border: none;
+  display: flex;
+  flex: 1;
+  min-width: 280px;
+  position: relative;
+  align-items: center;
+}
+
+section[role="search"] form fieldset svg {
+  position: absolute;
+  right: 0.85rem;
+  width: 18px;
+  height: 18px;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+
+section[role="search"] form fieldset input[type="search"] {
+  width: 100%;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 2.5rem 0.65rem 0.85rem;
+  color: var(--text-main);
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+section[role="search"] form fieldset input[type="search"]:focus {
+  outline: none;
+  border-color: var(--border-focus);
+}
+
+section[role="search"] form fieldset input[type="search"]::placeholder {
+  color: var(--text-dim);
+}
+
+section[role="search"] form a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.875rem;
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background-color: var(--bg-surface-elevated);
+}
+
+section[role="search"] form a:hover {
+  color: var(--text-main);
+  background-color: var(--bg-surface-hover);
+}
+
+/* Date Filter Toolbar */
+.date-filter-bar {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.date-filter-top {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.date-filter-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.date-filter-label svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--accent);
+}
+
+.date-mode-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.date-tab-btn {
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.date-tab-btn:hover {
+  color: var(--text-heading);
+  background-color: var(--bg-surface-hover);
+}
+
+.date-tab-btn.active {
+  background-color: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.btn-clear-date {
+  margin-right: auto;
+  background-color: transparent;
+  color: var(--danger);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-clear-date:hover {
+  background-color: rgba(220, 38, 38, 0.15);
+  border-color: var(--danger);
+  color: #fca5a5;
+}
+
+.date-filter-panel {
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.date-mode-view {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.date-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.date-input-group label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.date-input-group input[type="date"] {
+  background-color: var(--bg-input);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.55rem;
+  font-size: 0.825rem;
+  outline: none;
+}
+
+.date-input-group input[type="date"]:focus {
+  border-color: var(--border-focus);
+}
+
+.date-presets {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.btn-date-preset {
+  background-color: var(--bg-surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.55rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-date-preset:hover {
+  color: var(--text-heading);
+  background-color: var(--bg-surface-hover);
+  border-color: var(--border-focus);
+}
+
+.date-range-error {
+  font-size: 0.75rem;
+  color: var(--danger);
+  background-color: rgba(220, 38, 38, 0.1);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
+.date-field-group {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-right: auto;
+}
+
+.date-field-group label {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.date-field-group select {
+  background-color: var(--bg-input);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.5rem;
+  font-size: 0.8rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.date-field-group select:focus {
+  border-color: var(--border-focus);
+  color: var(--text-main);
+}
