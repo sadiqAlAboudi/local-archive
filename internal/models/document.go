@@ -93,13 +93,16 @@ func (d Document) DownloadFilename() string {
 
 // FilterParams holds filter and search query options.
 type FilterParams struct {
-	Query   string
-	DocType string // "all", "incoming", "outgoing"
+	Query     string
+	DocType   string // "all", "incoming", "outgoing"
+	StartDate string // YYYY-MM-DD
+	EndDate   string // YYYY-MM-DD
+	DateField string // "doc_date" (default), "letter_date", "any"
 }
 
-// HasActiveFilters returns true if search query or type filter is active.
+// HasActiveFilters returns true if search query, type filter, or date filters are active.
 func (f FilterParams) HasActiveFilters() bool {
-	return f.Query != "" || (f.DocType != "" && f.DocType != "all")
+	return f.Query != "" || (f.DocType != "" && f.DocType != "all") || f.StartDate != "" || f.EndDate != ""
 }
 
 // IndexViewData holds data for the main dashboard view.

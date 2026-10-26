@@ -248,3 +248,141 @@ func TestInitUserVersion(t *testing.T) {
 	}
 }
 
+func TestDateFiltering(t *testing.T) {
+	db, tempDir := setupTestDB(t)
+	defer os.RemoveAll(tempDir)
+	defer db.Close()
+
+	// Seed documents with various dates
+	doc1 := &models.Document{
+		DocType:          "incoming",
+		SerialNumber:     "DOC-1",
+		DocDate:          "2026-10-10",
+		Department:       "Finance",
+		LetterNumber:     "L-100",
+		LetterDate:       "2026-10-08",
+		Subject:          "Budget Proposal",
+		Filename:         "doc1.pdf",
+		OriginalFilename: "doc1.pdf",
+		FileType:         "pdf",
+		MimeType:         "application/pdf",
+		FileSize:         500,
+	}
+	doc2 := &models.Document{
+		DocType:          "outgoing",
+		IssueNumber:      "OUT-2",
+		DocDate:          "2026-10-15",
+		Department:       "HR",
+		Subject:          "Staff Notice",
+		Filename:         "doc2.pdf",
+		OriginalFilename: "doc2.pdf",
+		FileType:         "pdf",
+		MimeType:         "application/pdf",
+		FileSize:         600,
+	}
+	doc3 := &models.Document{
+		DocType:          "incoming",
+		SerialNumber:     "DOC-3",
+		DocDate:          "2026-10-20",
+		Department:       "Legal",
+		LetterNumber:     "L-300",
+		LetterDate:       "2026-10-18",
+		Subject:          "Contract Review",
+		Filename:         "doc3.pdf",
+		OriginalFilename: "doc3.pdf",
+		FileType:         "pdf",
+		MimeType:         "application/pdf",
+		FileSize:         700,
+	}
+
+	for _, d := range []*models.Document{doc1, doc2, doc3} {
+		if err := db.CreateDocument(d); err != nil {
+			t.Fatalf("failed to create document: %v", err)
+		}
+	}
+
+	// 1. Single Date Filter (exact match on 2026-10-15)
+	singleDateDocs, err := db.GetDocuments(models.FilterParams{
+		StartDate: "2026-10-15",
+		EndDate:   "2026-10-15",
+	})
+	if err != nil {
+		t.Fatalf("single date filter failed: %v", err)
+	}
+	if len(singleDateDocs) != 1 || singleDateDocs[0].ID != doc2.ID {
+		t.Fatalf("expected 1 doc matching 2026-10-15, got %d", len(singleDateDocs))
+	}
+
+	// 2. Date Range Filter (2026-10-10 to 2026-10-16 -> doc1 and doc2)
+	rangeDocs, err := db.GetDocuments(models.FilterParams{
+		StartDate: "2026-10-10",
+		EndDate:   "2026-10-16",
+	})
+	if err != nil {
+		t.Fatalf("date range filter failed: %v", err)
+	}
+	if len(rangeDocs) != 2 {
+		t.Fatalf("expected 2 docs in range, got %d", len(rangeDocs))
+	}
+
+	// 3. Inverted Date Range Filter (StartDate > EndDate should auto-swap)
+	invertedDocs, err := db.GetDocuments(models.FilterParams{
+		StartDate: "2026-10-22",
+		EndDate:   "2026-10-12",
+	})
+	if err != nil {
+		t.Fatalf("inverted date range filter failed: %v", err)
+	}
+	if len(invertedDocs) != 2 { // doc2 (10-15) and doc3 (10-20)
+		t.Fatalf("expected 2 docs in swapped range, got %d", len(invertedDocs))
+	}
+
+	// 4. Open-ended StartDate only (>= 2026-10-15 -> doc2 and doc3)
+	afterDocs, err := db.GetDocuments(models.FilterParams{
+		StartDate: "2026-10-15",
+	})
+	if err != nil {
+		t.Fatalf("start date only filter failed: %v", err)
+	}
+	if len(afterDocs) != 2 {
+		t.Fatalf("expected 2 docs >= 2026-10-15, got %d", len(afterDocs))
+	}
+
+	// 5. Open-ended EndDate only (<= 2026-10-12 -> doc1)
+	beforeDocs, err := db.GetDocuments(models.FilterParams{
+		EndDate: "2026-10-12",
+	})
+	if err != nil {
+		t.Fatalf("end date only filter failed: %v", err)
+	}
+	if len(beforeDocs) != 1 || beforeDocs[0].ID != doc1.ID {
+		t.Fatalf("expected 1 doc <= 2026-10-12, got %d", len(beforeDocs))
+	}
+
+	// 6. Combination: DocType + Date Range
+	comboDocs, err := db.GetDocuments(models.FilterParams{
+		DocType:   "incoming",
+		StartDate: "2026-10-01",
+		EndDate:   "2026-10-16",
+	})
+	if err != nil {
+		t.Fatalf("combo filter failed: %v", err)
+	}
+	if len(comboDocs) != 1 || comboDocs[0].ID != doc1.ID {
+		t.Fatalf("expected 1 incoming doc in range, got %d", len(comboDocs))
+	}
+
+	// 7. LetterDate filter
+	letterDocs, err := db.GetDocuments(models.FilterParams{
+		StartDate: "2026-10-18",
+		EndDate:   "2026-10-18",
+		DateField: "letter_date",
+	})
+	if err != nil {
+		t.Fatalf("letter date filter failed: %v", err)
+	}
+	if len(letterDocs) != 1 || letterDocs[0].ID != doc3.ID {
+		t.Fatalf("expected 1 doc matching letter_date 2026-10-18, got %d", len(letterDocs))
+	}
+}
+

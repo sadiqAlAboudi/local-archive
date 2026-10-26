@@ -311,10 +311,13 @@ func (a *App) DeleteDocument(id int64) error {
 }
 
 // GetDocuments queries the documents list with filters.
-func (a *App) GetDocuments(query, docType string) ([]models.Document, error) {
+func (a *App) GetDocuments(query, docType, startDate, endDate, dateField string) ([]models.Document, error) {
 	return a.db.GetDocuments(models.FilterParams{
-		Query:   strings.TrimSpace(query),
-		DocType: strings.TrimSpace(docType),
+		Query:     strings.TrimSpace(query),
+		DocType:   strings.TrimSpace(docType),
+		StartDate: strings.TrimSpace(startDate),
+		EndDate:   strings.TrimSpace(endDate),
+		DateField: strings.TrimSpace(dateField),
 	})
 }
 

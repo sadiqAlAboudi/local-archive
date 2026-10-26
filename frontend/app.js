@@ -3,6 +3,10 @@
 let currentTypeFilter = "all";
 let searchQuery = "";
 let currentPreviewDoc = null;
+let currentDateMode = "all"; // "all" | "single" | "range"
+let filterStartDate = "";
+let filterEndDate = "";
+let filterDateField = "doc_date";
 
 // Helper to escape HTML characters
 function escapeHtml(str) {
@@ -139,6 +143,183 @@ async function refreshStats() {
   }
 }
 
+// Format Date object to local YYYY-MM-DD
+function formatDateIso(d) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+// Check if date filter is currently active
+function isDateFilterActive() {
+  if (currentDateMode === "single") {
+    return Boolean(filterStartDate);
+  }
+  if (currentDateMode === "range") {
+    return Boolean(filterStartDate || filterEndDate);
+  }
+  return false;
+}
+
+// Setup Date Filter toolbar event listeners
+function setupDateFilterListeners() {
+  const panel = document.getElementById("date-filter-panel");
+  const viewSingle = document.getElementById("view-single-date");
+  const viewRange = document.getElementById("view-range-date");
+  const inputSingle = document.getElementById("filter-single-date");
+  const inputStart = document.getElementById("filter-start-date");
+  const inputEnd = document.getElementById("filter-end-date");
+  const selectField = document.getElementById("filter-date-field");
+  const btnClearDate = document.getElementById("btn-clear-date");
+
+  function setMode(mode) {
+    currentDateMode = mode;
+    document.querySelectorAll(".date-tab-btn").forEach(btn => {
+      const active = btn.getAttribute("data-mode") === mode;
+      btn.classList.toggle("active", active);
+      btn.setAttribute("aria-selected", active ? "true" : "false");
+    });
+
+    if (mode === "all") {
+      if (panel) panel.style.display = "none";
+      if (viewSingle) viewSingle.style.display = "none";
+      if (viewRange) viewRange.style.display = "none";
+      filterStartDate = "";
+      filterEndDate = "";
+      if (inputSingle) inputSingle.value = "";
+      if (inputStart) inputStart.value = "";
+      if (inputEnd) inputEnd.value = "";
+      loadDocuments();
+    } else if (mode === "single") {
+      if (panel) panel.style.display = "flex";
+      if (viewSingle) viewSingle.style.display = "flex";
+      if (viewRange) viewRange.style.display = "none";
+      filterEndDate = "";
+      if (inputSingle && !inputSingle.value && inputStart && inputStart.value) {
+        inputSingle.value = inputStart.value;
+      }
+      filterStartDate = inputSingle ? inputSingle.value : "";
+      loadDocuments();
+    } else if (mode === "range") {
+      if (panel) panel.style.display = "flex";
+      if (viewSingle) viewSingle.style.display = "none";
+      if (viewRange) viewRange.style.display = "flex";
+      if (inputStart && !inputStart.value && inputSingle && inputSingle.value) {
+        inputStart.value = inputSingle.value;
+      }
+      filterStartDate = inputStart ? inputStart.value : "";
+      filterEndDate = inputEnd ? inputEnd.value : "";
+      loadDocuments();
+    }
+  }
+
+  document.querySelectorAll(".date-tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      setMode(btn.getAttribute("data-mode"));
+    });
+  });
+
+  if (inputSingle) {
+    inputSingle.addEventListener("change", (e) => {
+      filterStartDate = e.target.value;
+      loadDocuments();
+    });
+  }
+
+  if (inputStart) {
+    inputStart.addEventListener("change", (e) => {
+      filterStartDate = e.target.value;
+      loadDocuments();
+    });
+  }
+
+  if (inputEnd) {
+    inputEnd.addEventListener("change", (e) => {
+      filterEndDate = e.target.value;
+      loadDocuments();
+    });
+  }
+
+  if (selectField) {
+    selectField.addEventListener("change", (e) => {
+      filterDateField = e.target.value;
+      loadDocuments();
+    });
+  }
+
+  if (btnClearDate) {
+    btnClearDate.addEventListener("click", () => {
+      filterStartDate = "";
+      filterEndDate = "";
+      if (inputSingle) inputSingle.value = "";
+      if (inputStart) inputStart.value = "";
+      if (inputEnd) inputEnd.value = "";
+      loadDocuments();
+    });
+  }
+
+  document.querySelectorAll(".btn-date-preset").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const preset = btn.getAttribute("data-preset");
+      const today = new Date();
+
+      if (preset === "today") {
+        const todayStr = formatDateIso(today);
+        if (currentDateMode === "single") {
+          if (inputSingle) inputSingle.value = todayStr;
+          filterStartDate = todayStr;
+        } else if (currentDateMode === "range") {
+          if (inputStart) inputStart.value = todayStr;
+          if (inputEnd) inputEnd.value = todayStr;
+          filterStartDate = todayStr;
+          filterEndDate = todayStr;
+        }
+        loadDocuments();
+      } else if (preset === "yesterday") {
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yestStr = formatDateIso(yesterday);
+        if (currentDateMode === "single") {
+          if (inputSingle) inputSingle.value = yestStr;
+          filterStartDate = yestStr;
+        } else if (currentDateMode === "range") {
+          if (inputStart) inputStart.value = yestStr;
+          if (inputEnd) inputEnd.value = yestStr;
+          filterStartDate = yestStr;
+          filterEndDate = yestStr;
+        }
+        loadDocuments();
+      } else if (preset === "this-week") {
+        const day = today.getDay(); // 0=Sun, ..., 6=Sat
+        const diffToSat = (day + 1) % 7;
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - diffToSat);
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+        const startStr = formatDateIso(startOfWeek);
+        const endStr = formatDateIso(endOfWeek);
+        if (inputStart) inputStart.value = startStr;
+        if (inputEnd) inputEnd.value = endStr;
+        filterStartDate = startStr;
+        filterEndDate = endStr;
+        loadDocuments();
+      } else if (preset === "this-month") {
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        const startStr = formatDateIso(firstDay);
+        const endStr = formatDateIso(lastDay);
+        if (inputStart) inputStart.value = startStr;
+        if (inputEnd) inputEnd.value = endStr;
+        filterStartDate = startStr;
+        filterEndDate = endStr;
+        loadDocuments();
+      }
+    });
+  });
+}
+
 // Load and render documents list
 async function loadDocuments() {
   if (!window.go || !window.go.main || !window.go.main.App) return;
@@ -148,13 +329,63 @@ async function loadDocuments() {
   const table = document.getElementById("docs-table");
   const filterIndicator = document.getElementById("filter-indicator");
   const btnReset = document.getElementById("btn-reset-filter");
+  const btnClearDate = document.getElementById("btn-clear-date");
+  const rangeError = document.getElementById("date-range-error");
 
-  const hasFilter = searchQuery.trim() !== "" || currentTypeFilter !== "all";
-  if (filterIndicator) filterIndicator.style.display = hasFilter ? "inline-block" : "none";
+  const dateActive = isDateFilterActive();
+  const hasFilter = searchQuery.trim() !== "" || currentTypeFilter !== "all" || dateActive;
+
+  if (filterIndicator) {
+    filterIndicator.style.display = hasFilter ? "inline-block" : "none";
+    if (hasFilter) {
+      let desc = "تم تطبيق التصفية والبحث";
+      if (dateActive) {
+        if (currentDateMode === "single") {
+          desc = `تصفية: يوم ${filterStartDate}`;
+        } else if (currentDateMode === "range") {
+          if (filterStartDate && filterEndDate) {
+            desc = `تصفية: من ${filterStartDate} إلى ${filterEndDate}`;
+          } else if (filterStartDate) {
+            desc = `تصفية: من ${filterStartDate}`;
+          } else if (filterEndDate) {
+            desc = `تصفية: لغاية ${filterEndDate}`;
+          }
+        }
+      }
+      filterIndicator.textContent = desc;
+    }
+  }
+
   if (btnReset) btnReset.style.display = hasFilter ? "inline-block" : "none";
+  if (btnClearDate) btnClearDate.style.display = dateActive ? "inline-block" : "none";
+
+  let queryStart = "";
+  let queryEnd = "";
+
+  if (currentDateMode === "single") {
+    queryStart = filterStartDate;
+    queryEnd = filterStartDate;
+    if (rangeError) rangeError.style.display = "none";
+  } else if (currentDateMode === "range") {
+    queryStart = filterStartDate;
+    queryEnd = filterEndDate;
+    if (filterStartDate && filterEndDate && filterStartDate > filterEndDate) {
+      if (rangeError) rangeError.style.display = "inline-block";
+    } else {
+      if (rangeError) rangeError.style.display = "none";
+    }
+  } else {
+    if (rangeError) rangeError.style.display = "none";
+  }
 
   try {
-    const docs = await window.go.main.App.GetDocuments(searchQuery, currentTypeFilter);
+    const docs = await window.go.main.App.GetDocuments(
+      searchQuery,
+      currentTypeFilter,
+      queryStart,
+      queryEnd,
+      filterDateField
+    );
     tbody.innerHTML = "";
 
     if (!docs || docs.length === 0) {
@@ -555,8 +786,35 @@ document.addEventListener("DOMContentLoaded", () => {
       if (t.getAttribute("data-type") === "all") t.setAttribute("aria-current", "page");
       else t.removeAttribute("aria-current");
     });
+
+    // Reset date filter
+    currentDateMode = "all";
+    filterStartDate = "";
+    filterEndDate = "";
+    filterDateField = "doc_date";
+    document.querySelectorAll(".date-tab-btn").forEach(btn => {
+      const active = btn.getAttribute("data-mode") === "all";
+      btn.classList.toggle("active", active);
+      btn.setAttribute("aria-selected", active ? "true" : "false");
+    });
+    const panel = document.getElementById("date-filter-panel");
+    if (panel) panel.style.display = "none";
+    const singleInput = document.getElementById("filter-single-date");
+    if (singleInput) singleInput.value = "";
+    const startInput = document.getElementById("filter-start-date");
+    if (startInput) startInput.value = "";
+    const endInput = document.getElementById("filter-end-date");
+    if (endInput) endInput.value = "";
+    const dateFieldSelect = document.getElementById("filter-date-field");
+    if (dateFieldSelect) dateFieldSelect.value = "doc_date";
+    const rangeError = document.getElementById("date-range-error");
+    if (rangeError) rangeError.style.display = "none";
+
     loadDocuments();
   });
+
+  // Setup Date Filter toolbar listeners
+  setupDateFilterListeners();
 
   // Backup & Restore & Repair header buttons
   document.getElementById("btn-backup").addEventListener("click", handleCreateBackup);

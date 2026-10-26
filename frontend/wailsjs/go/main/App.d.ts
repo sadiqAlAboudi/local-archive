@@ -3,6 +3,9 @@
 import {updater} from '../models';
 import {main} from '../models';
 import {models} from '../models';
+import {database} from '../models';
+
+export function CheckDatabaseIntegrity():Promise<string>;
 
 export function CheckForUpdate():Promise<updater.UpdateInfo>;
 
@@ -18,9 +21,11 @@ export function GetAppVersion():Promise<string>;
 
 export function GetDocument(arg1:number):Promise<models.Document>;
 
-export function GetDocuments(arg1:string,arg2:string):Promise<Array<models.Document>>;
+export function GetDocuments(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string):Promise<Array<models.Document>>;
 
 export function GetStats():Promise<models.IndexViewData>;
+
+export function RecoverDatabase():Promise<database.RecoveryResult>;
 
 export function RestoreBackup():Promise<void>;
 

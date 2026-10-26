@@ -91,14 +91,25 @@ func TestWailsAppCRUD(t *testing.T) {
 	}
 
 	// 4. Test GetDocuments with filters
-	docsIncoming, err := app.GetDocuments("", "incoming")
+	docsIncoming, err := app.GetDocuments("", "incoming", "", "", "")
 	if err != nil || len(docsIncoming) != 1 {
 		t.Fatalf("expected 1 incoming doc, got %d (err: %v)", len(docsIncoming), err)
 	}
 
-	docsSearch, err := app.GetDocuments("تخصيصات", "all")
+	docsSearch, err := app.GetDocuments("تخصيصات", "all", "", "", "")
 	if err != nil || len(docsSearch) != 1 {
 		t.Fatalf("expected 1 doc from query, got %d (err: %v)", len(docsSearch), err)
+	}
+
+	// 4b. Test GetDocuments with Date Filtering
+	docsByDate, err := app.GetDocuments("", "all", "2026-09-27", "2026-09-27", "")
+	if err != nil || len(docsByDate) != 2 {
+		t.Fatalf("expected 2 docs on 2026-09-27, got %d (err: %v)", len(docsByDate), err)
+	}
+
+	docsNoMatchDate, err := app.GetDocuments("", "all", "2026-01-01", "2026-01-02", "")
+	if err != nil || len(docsNoMatchDate) != 0 {
+		t.Fatalf("expected 0 docs in empty date range, got %d (err: %v)", len(docsNoMatchDate), err)
 	}
 
 	// 5. Test UpdateDocument

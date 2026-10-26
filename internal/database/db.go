@@ -151,6 +151,8 @@ func (d *DB) Init() error {
 		`CREATE INDEX IF NOT EXISTS idx_documents_dept ON documents(department);`,
 		`CREATE INDEX IF NOT EXISTS idx_documents_letterno ON documents(letter_number);`,
 		`CREATE INDEX IF NOT EXISTS idx_documents_subject ON documents(subject);`,
+		`CREATE INDEX IF NOT EXISTS idx_documents_doc_date ON documents(doc_date);`,
+		`CREATE INDEX IF NOT EXISTS idx_documents_letter_date ON documents(letter_date);`,
 		`CREATE TABLE IF NOT EXISTS settings (
 			key TEXT PRIMARY KEY,
 			value TEXT
@@ -208,6 +210,51 @@ func (d *DB) GetDocuments(params models.FilterParams) ([]models.Document, error)
 			like := "%" + term + "%"
 			conditions = append(conditions, "(serial_number LIKE ? OR issue_number LIKE ? OR department LIKE ? OR letter_number LIKE ? OR subject LIKE ? OR original_filename LIKE ?)")
 			args = append(args, like, like, like, like, like, like)
+		}
+	}
+
+	startDate := strings.TrimSpace(params.StartDate)
+	endDate := strings.TrimSpace(params.EndDate)
+	if startDate != "" && endDate != "" && startDate > endDate {
+		startDate, endDate = endDate, startDate
+	}
+
+	dateCol := "doc_date"
+	if params.DateField == "letter_date" {
+		dateCol = "letter_date"
+	}
+
+	if params.DateField == "any" {
+		if startDate != "" && endDate != "" {
+			if startDate == endDate {
+				conditions = append(conditions, "(doc_date = ? OR letter_date = ?)")
+				args = append(args, startDate, startDate)
+			} else {
+				conditions = append(conditions, "((doc_date >= ? AND doc_date <= ?) OR (letter_date >= ? AND letter_date <= ?))")
+				args = append(args, startDate, endDate, startDate, endDate)
+			}
+		} else if startDate != "" {
+			conditions = append(conditions, "(doc_date >= ? OR letter_date >= ?)")
+			args = append(args, startDate, startDate)
+		} else if endDate != "" {
+			conditions = append(conditions, "((doc_date != '' AND doc_date <= ?) OR (letter_date != '' AND letter_date <= ?))")
+			args = append(args, endDate, endDate)
+		}
+	} else if startDate != "" || endDate != "" {
+		if startDate != "" && endDate != "" {
+			if startDate == endDate {
+				conditions = append(conditions, fmt.Sprintf("%s = ?", dateCol))
+				args = append(args, startDate)
+			} else {
+				conditions = append(conditions, fmt.Sprintf("%s >= ? AND %s <= ?", dateCol, dateCol))
+				args = append(args, startDate, endDate)
+			}
+		} else if startDate != "" {
+			conditions = append(conditions, fmt.Sprintf("%s >= ?", dateCol))
+			args = append(args, startDate)
+		} else if endDate != "" {
+			conditions = append(conditions, fmt.Sprintf("%s != '' AND %s <= ?", dateCol, dateCol))
+			args = append(args, endDate)
 		}
 	}
 

@@ -175,6 +175,74 @@
         </fieldset>
         <a href="#" id="btn-reset-filter" style="display: none;">إلغاء التصفية</a>
       </form>
+
+      <!-- شريط تصفية التاريخ -->
+      <div class="date-filter-bar">
+        <div class="date-filter-top">
+          <div class="date-filter-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span>تصفية بالتاريخ:</span>
+          </div>
+
+          <div class="date-mode-tabs" role="tablist" aria-label="وضع تصفية التاريخ">
+            <button type="button" class="date-tab-btn active" data-mode="all" role="tab" aria-selected="true">كافة التواريخ</button>
+            <button type="button" class="date-tab-btn" data-mode="single" role="tab" aria-selected="false">يوم محدد</button>
+            <button type="button" class="date-tab-btn" data-mode="range" role="tab" aria-selected="false">بين تاريخين</button>
+          </div>
+
+          <button type="button" id="btn-clear-date" class="btn-clear-date" style="display: none;" title="مسح التاريخ المختار">
+            &times; مسح التاريخ
+          </button>
+        </div>
+
+        <div class="date-filter-panel" id="date-filter-panel" style="display: none;">
+          <!-- وضع يوم محدد -->
+          <div class="date-mode-view" id="view-single-date" style="display: none;">
+            <div class="date-input-group">
+              <label for="filter-single-date">التاريخ:</label>
+              <input type="date" id="filter-single-date">
+            </div>
+            <div class="date-presets">
+              <button type="button" class="btn-date-preset" data-preset="today">اليوم</button>
+              <button type="button" class="btn-date-preset" data-preset="yesterday">أمس</button>
+            </div>
+          </div>
+
+          <!-- وضع بين تاريخين -->
+          <div class="date-mode-view" id="view-range-date" style="display: none;">
+            <div class="date-input-group">
+              <label for="filter-start-date">من تاريخ:</label>
+              <input type="date" id="filter-start-date">
+            </div>
+            <div class="date-input-group">
+              <label for="filter-end-date">إلى تاريخ:</label>
+              <input type="date" id="filter-end-date">
+            </div>
+            <div class="date-presets">
+              <button type="button" class="btn-date-preset" data-preset="this-week">هذا الأسبوع</button>
+              <button type="button" class="btn-date-preset" data-preset="this-month">هذا الشهر</button>
+            </div>
+            <span id="date-range-error" class="date-range-error" style="display: none;">
+              تاريخ البداية أكبر من تاريخ النهاية
+            </span>
+          </div>
+
+          <!-- اختيار حقل التاريخ المستهدف -->
+          <div class="date-field-group">
+            <label for="filter-date-field">نوع التاريخ:</label>
+            <select id="filter-date-field">
+              <option value="doc_date" selected>تاريخ الوثيقة (الورود / الصدور)</option>
+              <option value="letter_date">تاريخ الكتاب الوارد</option>
+              <option value="any">أي منهما</option>
+            </select>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- قائمة وجدول الوثائق -->

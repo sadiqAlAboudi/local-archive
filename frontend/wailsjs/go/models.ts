@@ -1,3 +1,30 @@
+export namespace database {
+	
+	export class RecoveryResult {
+	    success: boolean;
+	    message: string;
+	    recovered_docs: number;
+	    corrupted_skipped: number;
+	    backup_path: string;
+	    strategy_used: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new RecoveryResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.success = source["success"];
+	        this.message = source["message"];
+	        this.recovered_docs = source["recovered_docs"];
+	        this.corrupted_skipped = source["corrupted_skipped"];
+	        this.backup_path = source["backup_path"];
+	        this.strategy_used = source["strategy_used"];
+	    }
+	}
+
+}
+
 export namespace main {
 	
 	export class CreateDocumentInput {
