@@ -120,8 +120,3 @@ type IndexViewData struct {
 	LastBackupDays     int
 	Documents          []Document
 }
-
-// ViewDocData holds data for single document preview.
-type ViewDocData struct {
-	Doc Document
-}
