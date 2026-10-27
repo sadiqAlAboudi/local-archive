@@ -278,3 +278,80 @@ func TestAppDatabaseRecovery(t *testing.T) {
 	}
 }
 
+func TestAppScanAndSaveToPDFAndCreateDocument(t *testing.T) {
+	app, tempDir := setupTestApp(t)
+	defer os.RemoveAll(tempDir)
+	defer app.shutdown(context.TODO())
+
+	// 1. Scan page 1
+	p1, err := app.ScanPage()
+	if err != nil {
+		t.Fatalf("ScanPage 1 failed: %v", err)
+	}
+	if p1.Base64 == "" || p1.TempPath == "" {
+		t.Fatalf("expected valid ScannedPage from ScanPage")
+	}
+
+	// 2. Scan page 2
+	p2, err := app.ScanPage()
+	if err != nil {
+		t.Fatalf("ScanPage 2 failed: %v", err)
+	}
+
+	// 3. Rotate page 2 by 90 degrees
+	rotated2, err := app.RotatePage(p2.TempPath, 90)
+	if err != nil {
+		t.Fatalf("RotatePage failed: %v", err)
+	}
+	if rotated2.Base64 == "" {
+		t.Fatalf("expected valid base64 after rotation")
+	}
+
+	// 4. Compile into multi-page PDF
+	pdfPath, err := app.SaveToPDF([]string{p1.TempPath, rotated2.TempPath}, "scanned_archive.pdf")
+	if err != nil {
+		t.Fatalf("SaveToPDF failed: %v", err)
+	}
+	defer os.Remove(pdfPath)
+
+	if _, err := os.Stat(pdfPath); err != nil {
+		t.Fatalf("compiled PDF does not exist on disk: %v", err)
+	}
+
+	// 5. Save the compiled PDF into database as a Document
+	doc, err := app.CreateDocument(CreateDocumentInput{
+		DocType:      "incoming",
+		SerialNumber: "SCAN-2026/01",
+		DocDate:      "2026-10-27",
+		Department:   "دائرة التوثيق والأرشفة",
+		LetterNumber: "550",
+		LetterDate:   "2026-10-25",
+		Subject:      "تقرير الجرد السنوي الممسوح ضوئياً",
+		SourcePath:   pdfPath,
+	})
+	if err != nil {
+		t.Fatalf("CreateDocument with scanned PDF failed: %v", err)
+	}
+
+	if doc.ID == 0 {
+		t.Errorf("expected document ID to be non-zero")
+	}
+	if doc.FileType != "pdf" {
+		t.Errorf("expected FileType to be 'pdf', got '%s'", doc.FileType)
+	}
+
+	// Verify stored file in UploadDir
+	uploadPath := filepath.Join(app.paths.UploadDir, doc.Filename)
+	st, err := os.Stat(uploadPath)
+	if err != nil || st.Size() == 0 {
+		t.Fatalf("expected uploaded file to exist and have non-zero size at %s", uploadPath)
+	}
+
+	// Verify stats updated
+	stats, err := app.GetStats()
+	if err != nil || stats.TotalDocs != 1 {
+		t.Errorf("expected 1 document in stats, got %d", stats.TotalDocs)
+	}
+}
+
+

@@ -205,6 +205,33 @@ export namespace models {
 
 }
 
+export namespace scanner {
+	
+	export class ScannedPage {
+	    id: string;
+	    temp_path: string;
+	    base64: string;
+	    width: number;
+	    height: number;
+	    rotation: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ScannedPage(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.temp_path = source["temp_path"];
+	        this.base64 = source["base64"];
+	        this.width = source["width"];
+	        this.height = source["height"];
+	        this.rotation = source["rotation"];
+	    }
+	}
+
+}
+
 export namespace updater {
 	
 	export class UpdateInfo {

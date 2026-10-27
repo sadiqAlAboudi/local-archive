@@ -4,16 +4,21 @@ import {updater} from '../models';
 import {main} from '../models';
 import {models} from '../models';
 import {database} from '../models';
+import {scanner} from '../models';
 
 export function CheckDatabaseIntegrity():Promise<string>;
 
 export function CheckForUpdate():Promise<updater.UpdateInfo>;
+
+export function CleanupTempScans(arg1:Array<string>):Promise<void>;
 
 export function CreateBackup():Promise<string>;
 
 export function CreateDocument(arg1:main.CreateDocumentInput):Promise<models.Document>;
 
 export function DeleteDocument(arg1:number):Promise<void>;
+
+export function DeleteTempScan(arg1:string):Promise<void>;
 
 export function DownloadAndApplyUpdate():Promise<void>;
 
@@ -28,6 +33,12 @@ export function GetStats():Promise<models.IndexViewData>;
 export function RecoverDatabase():Promise<database.RecoveryResult>;
 
 export function RestoreBackup():Promise<void>;
+
+export function RotatePage(arg1:string,arg2:number):Promise<scanner.ScannedPage>;
+
+export function SaveToPDF(arg1:Array<string>,arg2:string):Promise<string>;
+
+export function ScanPage():Promise<scanner.ScannedPage>;
 
 export function SelectDocumentFile():Promise<string>;
 

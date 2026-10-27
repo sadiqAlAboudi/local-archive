@@ -2,6 +2,7 @@
 import { showAlert } from "./utils.js";
 import { refreshStats } from "./stats.js";
 import { loadDocuments } from "./documents.js";
+import { openScannerStudio, discardScanSession } from "./scanner.js";
 
 // Update form fields depending on doc_type (incoming vs outgoing)
 export function updateFormDocType(form, docType) {
@@ -104,12 +105,15 @@ export function setupDialogs() {
   const btnOpenAdd = document.getElementById("btn-open-add");
   const addDialog = document.getElementById("add-dialog");
   const addForm = document.getElementById("add-form");
+  const scannedPillContainer = document.getElementById("scanned-pill-container");
+  const scannedPillText = document.getElementById("scanned-pill-text");
 
   const openAddHandler = () => {
     addForm.reset();
     updateFormDocType(addForm, "incoming");
     document.getElementById("selected-file-name").textContent = "لم يتم اختيار ملف";
     document.getElementById("add-source-path").value = "";
+    if (scannedPillContainer) scannedPillContainer.style.display = "none";
     addDialog.showModal();
   };
 
@@ -129,10 +133,27 @@ export function setupDialogs() {
           addSourcePath.value = path;
           const filename = path.split(/[/\\]/).pop();
           selectedFileName.textContent = filename;
+          if (scannedPillContainer) scannedPillContainer.style.display = "none";
         }
       } catch (err) {
         alert("خطأ أثناء اختيار الملف: " + err);
       }
+    });
+  }
+
+  // WIA Scanner Studio Button
+  const btnOpenScanner = document.getElementById("btn-open-scanner");
+  if (btnOpenScanner) {
+    btnOpenScanner.addEventListener("click", () => {
+      openScannerStudio((pdfPath, pageCount) => {
+        addSourcePath.value = pdfPath;
+        const filename = pdfPath.split(/[/\\]/).pop();
+        selectedFileName.textContent = filename;
+        if (scannedPillContainer && scannedPillText) {
+          scannedPillText.textContent = `تم مسح وتجميع ${pageCount} صفحة في مستند PDF جاهز للحفظ بالأرشيف`;
+          scannedPillContainer.style.display = "flex";
+        }
+      });
     });
   }
 
@@ -168,6 +189,7 @@ export function setupDialogs() {
       try {
         await window.go.main.App.CreateDocument(payload);
         addDialog.close();
+        if (scannedPillContainer) scannedPillContainer.style.display = "none";
         showAlert("تم حفظ الوثيقة في الأرشيف بنجاح", "success");
         await refreshStats();
         await loadDocuments();

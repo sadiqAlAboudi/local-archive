@@ -357,10 +357,10 @@
           <textarea name="subject" rows="3" required placeholder="موضوع الكتاب أو تفاصيل الوثيقة..."></textarea>
         </label>
 
-        <!-- اختيار الملف عبر مربع حوار النظام الأصلي -->
+        <!-- اختيار الملف عبر مربع حوار النظام الأصلي أو الماسح الضوئي -->
         <label data-field="file">
           <span>الملف المرفق *</span>
-          <span>ملف PDF أو صورة (JPG, PNG, WEBP)</span>
+          <span>ملف PDF أو صورة (JPG, PNG, WEBP) أو سحب مباشر من الماسح</span>
           <div class="file-picker-container">
             <button type="button" id="btn-select-file">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -368,8 +368,24 @@
               </svg>
               اختيار الملف من الحاسوب...
             </button>
+            <button type="button" id="btn-open-scanner" class="btn-scanner">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+                <line x1="6" y1="12" x2="18" y2="12"></line>
+                <circle cx="18" cy="9" r="1"></circle>
+              </svg>
+              مسح ضوئي عبر الماسح (Scanner)...
+            </button>
             <span id="selected-file-name">لم يتم اختيار ملف</span>
             <input type="hidden" name="source_path" id="add-source-path" required>
+          </div>
+          <div id="scanned-pill-container" class="scanner-badge-container" style="display: none;">
+            <span class="scanned-status-pill">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span id="scanned-pill-text">تم تجميع الصفحات في ملف PDF بنجاح</span>
+            </span>
           </div>
         </label>
       </fieldset>
@@ -510,6 +526,73 @@
           </figure>
         </article>
       </div>
+    </div>
+  </dialog>
+
+  <!-- نافذة منبثقة: استوديو المسح الضوئي للوثائق (WIA Scanner) -->
+  <dialog id="scanner-dialog" class="dialog-large">
+    <div class="scanner-modal-wrapper">
+      <header class="scanner-modal-header">
+        <div class="scanner-header-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+            <line x1="6" y1="12" x2="18" y2="12"></line>
+            <circle cx="18" cy="9" r="1"></circle>
+          </svg>
+          <h3>المسح الضوئي للوثائق (WIA Scanner)</h3>
+        </div>
+        <button type="button" class="preview-close-btn scanner-close-btn" title="إغلاق">&times;</button>
+      </header>
+
+      <div class="scanner-toolbar">
+        <div class="scanner-toolbar-actions">
+          <button type="button" id="btn-scan-new" class="btn-scan-new">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+              <polyline points="12 5 12 19"></polyline>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            مسح صفحة جديدة
+          </button>
+          <span id="scanner-count-display" class="scan-page-count">الصفحات الممسوحة: <strong>0</strong></span>
+        </div>
+
+        <div id="scanner-status-indicator" class="scanner-status-msg">
+          <div class="scanner-spinner"></div>
+          <span id="scanner-status-text">جاري الاتصال بالماسح الضوئي...</span>
+        </div>
+      </div>
+
+      <main class="scanner-workspace">
+        <div id="scanner-empty-state" class="scanner-empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+            <line x1="6" y1="12" x2="18" y2="12"></line>
+            <circle cx="18" cy="9" r="1"></circle>
+            <path d="M6 18h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"></path>
+          </svg>
+          <h4>الماسح الضوئي جاهز للبدء</h4>
+          <p>تأكد من وضع الوثيقة في الماسح الضوئي ثم اضغط على زر "مسح صفحة جديدة" أعلاه. يمكنك مسح عدة صفحات وتدوير أي صفحة أو حذفها قبل التجميع.</p>
+        </div>
+
+        <div id="scanner-grid" class="scanner-grid" style="display: none;">
+          <!-- يتم إدراج بطاقات الصفحات ديناميكياً هنا -->
+        </div>
+      </main>
+
+      <footer class="scanner-modal-footer">
+        <div class="footer-left">
+          <span>يتم دمج وتنسيق الصفحات تلقائياً في مستند PDF واحد بمقاس A4</span>
+        </div>
+        <div class="footer-buttons">
+          <button type="button" id="btn-scanner-cancel" class="btn-scanner-cancel">إلغاء وتراجع</button>
+          <button type="button" id="btn-compile-pdf" class="btn-scanner-compile" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            اعتماد الصفحات وتوليد PDF
+          </button>
+        </div>
+      </footer>
     </div>
   </dialog>
 

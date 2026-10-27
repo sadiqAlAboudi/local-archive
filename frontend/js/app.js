@@ -5,11 +5,15 @@ import { setupDialogs } from "./dialogs.js";
 import { setupPreviewListeners } from "./preview.js";
 import { setupBackupListeners } from "./backup.js";
 import { setupUpdateListeners, checkForUpdates } from "./updater.js";
+import { initScannerStudio } from "./scanner.js";
 
 // Initialize application on DOM ready
 document.addEventListener("DOMContentLoaded", () => {
   // Setup dialogs (open, close, light dismiss, form submissions)
   setupDialogs();
+
+  // Setup scanner studio modal and events
+  initScannerStudio();
 
   // Setup search input and doc-type filter tabs
   setupSearchAndFilterListeners();

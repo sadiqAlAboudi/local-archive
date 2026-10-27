@@ -17,6 +17,7 @@ import (
 	"local-archive/internal/database"
 	"local-archive/internal/models"
 	"local-archive/internal/optimizer"
+	"local-archive/internal/scanner"
 	"local-archive/internal/sysutil"
 	"local-archive/internal/updater"
 
@@ -41,6 +42,10 @@ func NewApp(db *database.DB, paths sysutil.AppDataPaths) *App {
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+	// Clean up any stale temporary scan files from prior sessions
+	go func() {
+		_ = scanner.CleanupOrphanedScans()
+	}()
 }
 
 func (a *App) shutdown(ctx context.Context) {
@@ -64,6 +69,32 @@ func (a *App) SelectDocumentFile() (string, error) {
 			},
 		},
 	})
+}
+
+// ScanPage triggers WIA scanner acquisition and returns preview data and temp path.
+func (a *App) ScanPage() (*scanner.ScannedPage, error) {
+	return scanner.ScanPage()
+}
+
+// RotatePage physically rotates a scanned image by degrees clockwise (90, 180, 270)
+// and returns the updated preview with swapped dimensions.
+func (a *App) RotatePage(tempPath string, degrees int) (*scanner.ScannedPage, error) {
+	return scanner.RotatePage(tempPath, degrees)
+}
+
+// DeleteTempScan removes an individual temporary scan image file from disk.
+func (a *App) DeleteTempScan(tempPath string) error {
+	return scanner.DeleteTempScan(tempPath)
+}
+
+// CleanupTempScans removes multiple temporary scan files from disk.
+func (a *App) CleanupTempScans(tempPaths []string) error {
+	return scanner.CleanupTempScans(tempPaths)
+}
+
+// SaveToPDF compiles multiple scanned image pages into a single standard A4 PDF.
+func (a *App) SaveToPDF(tempPaths []string, defaultFilename string) (string, error) {
+	return scanner.SaveToPDF(tempPaths, defaultFilename)
 }
 
 // CreateDocumentInput defines the parameters passed from JavaScript.

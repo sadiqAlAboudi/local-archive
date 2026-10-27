@@ -10,6 +10,10 @@ export function CheckForUpdate() {
   return window['go']['main']['App']['CheckForUpdate']();
 }
 
+export function CleanupTempScans(arg1) {
+  return window['go']['main']['App']['CleanupTempScans'](arg1);
+}
+
 export function CreateBackup() {
   return window['go']['main']['App']['CreateBackup']();
 }
@@ -20,6 +24,10 @@ export function CreateDocument(arg1) {
 
 export function DeleteDocument(arg1) {
   return window['go']['main']['App']['DeleteDocument'](arg1);
+}
+
+export function DeleteTempScan(arg1) {
+  return window['go']['main']['App']['DeleteTempScan'](arg1);
 }
 
 export function DownloadAndApplyUpdate() {
@@ -48,6 +56,18 @@ export function RecoverDatabase() {
 
 export function RestoreBackup() {
   return window['go']['main']['App']['RestoreBackup']();
+}
+
+export function RotatePage(arg1, arg2) {
+  return window['go']['main']['App']['RotatePage'](arg1, arg2);
+}
+
+export function SaveToPDF(arg1, arg2) {
+  return window['go']['main']['App']['SaveToPDF'](arg1, arg2);
+}
+
+export function ScanPage() {
+  return window['go']['main']['App']['ScanPage']();
 }
 
 export function SelectDocumentFile() {
