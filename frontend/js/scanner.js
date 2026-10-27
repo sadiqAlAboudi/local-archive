@@ -34,7 +34,7 @@ export function initScannerStudio() {
     }
 
     if (btnScanLabel) {
-      btnScanLabel.textContent = isFeeder ? "بدء مسح حزمة الأوراق (ADF)" : "مسح صفحة جديدة";
+      btnScanLabel.textContent = isFeeder ? "بدء سحب الأوراق" : "سحب صفحة";
     }
   };
 
@@ -139,7 +139,7 @@ export function hasActiveScanPages() {
 async function handleScanPage() {
   if (isScanning) return;
   isScanning = true;
-  setScanningStatus(true, "جاري الاتصال بالماسح الضوئي وسحب الصفحة... يرجى الانتظار");
+  setScanningStatus(true, "جاري سحب الصفحة من الماسح... يرجى الانتظار");
 
   try {
     const page = await window.go.main.App.ScanPage();
@@ -171,7 +171,7 @@ async function handleScanPage() {
 async function handleScanFeeder() {
   if (isScanning) return;
   isScanning = true;
-  setScanningStatus(true, "جاري سحب الأوراق عبر وحدة التغذية (ADF)... يرجى الانتظار");
+  setScanningStatus(true, "جاري سحب الأوراق من الماسح... يرجى الانتظار");
 
   const duplex = document.getElementById("scan-duplex-checkbox")?.checked || false;
   const initialCount = scannedPages.length;
@@ -187,7 +187,7 @@ async function handleScanFeeder() {
       });
       updateScannerUI();
       const addedCount = scannedPages.length - initialCount;
-      showAlert(`تم مسح ${addedCount} صفحة عبر وحدة التغذية (ADF) بنجاح`, "success");
+      showAlert(`تم سحب ${addedCount} ورقة بنجاح`, "success");
     }
   } catch (err) {
     const errStr = String(err || "");
@@ -196,7 +196,7 @@ async function handleScanFeeder() {
     } else {
       // If some pages were scanned before a jam or error, keep them
       updateScannerUI();
-      showAlert(errStr || "حدث خطأ أثناء سحب الأوراق من وحدة التغذية", "error");
+      showAlert(errStr || "حدث خطأ أثناء سحب الأوراق من الماسح", "error");
     }
   } finally {
     isScanning = false;
@@ -256,13 +256,13 @@ async function handleDeletePage(index) {
 // Compile all pages into a standard A4 PDF
 async function handleCompilePDF() {
   if (scannedPages.length === 0) {
-    showAlert("يرجى مسح صفحة واحدة على الأقل قبل التجميع", "warning");
+    showAlert("يرجى سحب ورقة واحدة على الأقل قبل الإتمام", "warning");
     return;
   }
 
   const btnCompile = document.getElementById("btn-compile-pdf");
   if (btnCompile) btnCompile.disabled = true;
-  setScanningStatus(true, "جاري تجميع الصفحات في ملف PDF (A4)...");
+  setScanningStatus(true, "جاري تجهيز المستند النهائي...");
 
   try {
     const paths = scannedPages.map((p) => p.temp_path);
@@ -279,10 +279,10 @@ async function handleCompilePDF() {
       if (typeof onCompleteCallback === "function") {
         onCompleteCallback(pdfPath, pageCount);
       }
-      showAlert(`تم تجميع ${pageCount} صفحة في مستند PDF بنجاح`, "success");
+      showAlert(`تم تجهيز ${pageCount} ورقة وإرفاقها بالمستند بنجاح`, "success");
     }
   } catch (err) {
-    showAlert("فشل تجميع ملف PDF: " + err, "error");
+    showAlert("فشل تجهيز ملف المستند: " + err, "error");
   } finally {
     if (btnCompile) btnCompile.disabled = false;
     setScanningStatus(false);
@@ -316,7 +316,7 @@ function updateScannerUI() {
   const count = scannedPages.length;
 
   if (countDisplay) {
-    countDisplay.innerHTML = `الصفحات الممسوحة: <strong>${count}</strong>`;
+    countDisplay.innerHTML = `الأوراق المسحوبة: <strong>${count}</strong>`;
   }
 
   if (btnCompile) {
@@ -343,21 +343,20 @@ function updateScannerUI() {
 
     card.innerHTML = `
       <header class="scanner-card-header">
-        <span>صفحة ${index + 1}</span>
-        <span class="scanner-card-badge">${page.width} &times; ${page.height}</span>
+        <span>ورقة ${index + 1}</span>
       </header>
       <div class="scanner-thumb-container">
-        <img class="scanner-thumb-img" src="${page.base64}" alt="معاينة صفحة ${index + 1}" loading="lazy">
+        <img class="scanner-thumb-img" src="${page.base64}" alt="معاينة ورقة ${index + 1}" loading="lazy">
       </div>
       <footer class="scanner-card-actions">
-        <button type="button" class="btn-card-action btn-card-rotate" title="تدوير 90 درجة باتجاه عقارب الساعة">
+        <button type="button" class="btn-card-action btn-card-rotate" title="تدوير الورقة 90 درجة">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 4 23 10 17 10"></polyline>
             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
           </svg>
-          تدوير 90°
+          تدوير
         </button>
-        <button type="button" class="btn-card-action btn-card-delete" title="حذف هذه الصفحة">
+        <button type="button" class="btn-card-action btn-card-delete" title="حذف هذه الورقة">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="3 6 5 6 21 6"></polyline>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>

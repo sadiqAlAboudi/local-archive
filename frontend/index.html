@@ -374,7 +374,7 @@
                 <line x1="6" y1="12" x2="18" y2="12"></line>
                 <circle cx="18" cy="9" r="1"></circle>
               </svg>
-              مسح ضوئي عبر الماسح (Scanner)...
+              سحب من الماسح الضوئي...
             </button>
             <span id="selected-file-name">لم يتم اختيار ملف</span>
             <input type="hidden" name="source_path" id="add-source-path" required>
@@ -539,29 +539,29 @@
             <line x1="6" y1="12" x2="18" y2="12"></line>
             <circle cx="18" cy="9" r="1"></circle>
           </svg>
-          <h3>المسح الضوئي للوثائق (WIA Scanner)</h3>
+          <h3>سحب المستندات من الماسح الضوئي</h3>
         </div>
         <button type="button" class="preview-close-btn scanner-close-btn" title="إغلاق">&times;</button>
       </header>
 
       <div class="scanner-toolbar">
         <div class="scanner-toolbar-actions">
-          <!-- محدد وضع المسح: مسطح أو وحدة التغذية ADF -->
-          <div class="scanner-mode-selector" role="radiogroup" aria-label="وضع المسح">
+          <!-- محدد طريقة السحب: ورقة واحدة أو حزمة أوراق -->
+          <div class="scanner-mode-selector" role="radiogroup" aria-label="طريقة السحب">
             <label class="scanner-mode-pill active">
               <input type="radio" name="scan_source_mode" value="flatbed" checked>
-              <span>📄 مسح مسطح (صفحة)</span>
+              <span>📄 ورقة واحدة (السطح الزجاجي)</span>
             </label>
             <label class="scanner-mode-pill">
               <input type="radio" name="scan_source_mode" value="feeder">
-              <span>📑 وحدة التغذية (ADF دفعة)</span>
+              <span>📑 عدة أوراق (سحب تلقائي)</span>
             </label>
           </div>
 
-          <!-- خيار مسح الوجهين لوحدة التغذية -->
-          <label id="scanner-duplex-toggle" class="scanner-duplex-label" style="display: none;" title="مسح وجهي الورقة إذا كان الماسح يدعم ذلك">
+          <!-- خيار مسح الوجهين -->
+          <label id="scanner-duplex-toggle" class="scanner-duplex-label" style="display: none;" title="سحب وجهي الورقة إذا كان الماسح يدعم ذلك">
             <input type="checkbox" id="scan-duplex-checkbox">
-            <span>مسح الوجهين (Duplex)</span>
+            <span>سحب الوجهين (الأمام والخلف)</span>
           </label>
 
           <button type="button" id="btn-scan-new" class="btn-scan-new">
@@ -569,9 +569,9 @@
               <polyline points="12 5 12 19"></polyline>
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
-            <span id="btn-scan-label">مسح صفحة جديدة</span>
+            <span id="btn-scan-label">سحب صفحة</span>
           </button>
-          <span id="scanner-count-display" class="scan-page-count">الصفحات الممسوحة: <strong>0</strong></span>
+          <span id="scanner-count-display" class="scan-page-count">الأوراق المسحوبة: <strong>0</strong></span>
         </div>
 
         <div id="scanner-status-indicator" class="scanner-status-msg">
@@ -589,7 +589,7 @@
             <path d="M6 18h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"></path>
           </svg>
           <h4>الماسح الضوئي جاهز للبدء</h4>
-          <p>تأكد من وضع الوثيقة في الماسح الضوئي ثم اضغط على زر "مسح صفحة جديدة" أعلاه. يمكنك مسح عدة صفحات وتدوير أي صفحة أو حذفها قبل التجميع.</p>
+          <p>ضع الأوراق في الماسح واضغط زر البدء الأخضر أعلاه. يمكنك تدوير أي ورقة مقلوبة أو حذف الأوراق الزائدة بسهولة قبل الإتمام.</p>
         </div>
 
         <div id="scanner-grid" class="scanner-grid" style="display: none;">
@@ -599,15 +599,15 @@
 
       <footer class="scanner-modal-footer">
         <div class="footer-left">
-          <span>يتم دمج وتنسيق الصفحات تلقائياً في مستند PDF واحد بمقاس A4</span>
+          <span>سيتم جمع كافة الأوراق تلقائياً في ملف PDF موحد جاهز للحفظ</span>
         </div>
         <div class="footer-buttons">
-          <button type="button" id="btn-scanner-cancel" class="btn-scanner-cancel">إلغاء وتراجع</button>
+          <button type="button" id="btn-scanner-cancel" class="btn-scanner-cancel">إلغاء</button>
           <button type="button" id="btn-compile-pdf" class="btn-scanner-compile" disabled>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
-            اعتماد الصفحات وتوليد PDF
+            إتمام وإرفاق المستند
           </button>
         </div>
       </footer>

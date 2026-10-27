@@ -150,7 +150,7 @@ export function setupDialogs() {
         const filename = pdfPath.split(/[/\\]/).pop();
         selectedFileName.textContent = filename;
         if (scannedPillContainer && scannedPillText) {
-          scannedPillText.textContent = `تم مسح وتجميع ${pageCount} صفحة في مستند PDF جاهز للحفظ بالأرشيف`;
+          scannedPillText.textContent = `تم سحب وتجهيز ${pageCount} ورقة بنجاح - المستند جاهز للحفظ بالأرشيف`;
           scannedPillContainer.style.display = "flex";
         }
       });
