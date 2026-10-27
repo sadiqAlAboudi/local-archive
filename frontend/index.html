@@ -546,12 +546,30 @@
 
       <div class="scanner-toolbar">
         <div class="scanner-toolbar-actions">
+          <!-- محدد وضع المسح: مسطح أو وحدة التغذية ADF -->
+          <div class="scanner-mode-selector" role="radiogroup" aria-label="وضع المسح">
+            <label class="scanner-mode-pill active">
+              <input type="radio" name="scan_source_mode" value="flatbed" checked>
+              <span>📄 مسح مسطح (صفحة)</span>
+            </label>
+            <label class="scanner-mode-pill">
+              <input type="radio" name="scan_source_mode" value="feeder">
+              <span>📑 وحدة التغذية (ADF دفعة)</span>
+            </label>
+          </div>
+
+          <!-- خيار مسح الوجهين لوحدة التغذية -->
+          <label id="scanner-duplex-toggle" class="scanner-duplex-label" style="display: none;" title="مسح وجهي الورقة إذا كان الماسح يدعم ذلك">
+            <input type="checkbox" id="scan-duplex-checkbox">
+            <span>مسح الوجهين (Duplex)</span>
+          </label>
+
           <button type="button" id="btn-scan-new" class="btn-scan-new">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
               <polyline points="12 5 12 19"></polyline>
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
-            مسح صفحة جديدة
+            <span id="btn-scan-label">مسح صفحة جديدة</span>
           </button>
           <span id="scanner-count-display" class="scan-page-count">الصفحات الممسوحة: <strong>0</strong></span>
         </div>

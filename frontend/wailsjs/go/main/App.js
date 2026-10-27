@@ -66,6 +66,10 @@ export function SaveToPDF(arg1, arg2) {
   return window['go']['main']['App']['SaveToPDF'](arg1, arg2);
 }
 
+export function ScanFeeder(arg1, arg2) {
+  return window['go']['main']['App']['ScanFeeder'](arg1, arg2);
+}
+
 export function ScanPage() {
   return window['go']['main']['App']['ScanPage']();
 }

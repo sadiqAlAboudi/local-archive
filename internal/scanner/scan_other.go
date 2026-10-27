@@ -5,6 +5,7 @@ package scanner
 import (
 	"bytes"
 	"encoding/base64"
+	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
@@ -13,9 +14,7 @@ import (
 	"path/filepath"
 )
 
-// ScanPage provides a simulated scanned page on non-Windows platforms (Linux/macOS)
-// for automated testing, development, and CI environments.
-func ScanPage() (*ScannedPage, error) {
+func generateSimulatedPage(pageIndex int) (*ScannedPage, error) {
 	width := 800
 	height := 1131 // Standard A4 ratio (~1:1.414)
 
@@ -42,7 +41,15 @@ func ScanPage() (*ScannedPage, error) {
 		}
 	}
 
-	tempPath := GenerateTempScanPath(".jpg")
+	// Subtle accent mark indicating page index
+	markColor := color.RGBA{180, 190, 205, 255}
+	for y := 180; y < 190; y++ {
+		for x := 60; x < 60+(pageIndex*40); x++ {
+			img.Set(x, y, markColor)
+		}
+	}
+
+	tempPath := GenerateTempScanPath(fmt.Sprintf("_p%d.jpg", pageIndex))
 	f, err := os.Create(tempPath)
 	if err != nil {
 		return nil, err
@@ -67,4 +74,32 @@ func ScanPage() (*ScannedPage, error) {
 		Height:   height,
 		Rotation: 0,
 	}, nil
+}
+
+// ScanPage provides a simulated scanned page on non-Windows platforms (Linux/macOS)
+// for automated testing, development, and CI environments.
+func ScanPage() (*ScannedPage, error) {
+	return generateSimulatedPage(1)
+}
+
+// ScanFeeder provides a simulated multi-page feeder batch on non-Windows platforms.
+// It generates multiple pages, calling onPageCallback for each page.
+func ScanFeeder(opts FeederScanOptions, onPageCallback func(*ScannedPage)) ([]*ScannedPage, error) {
+	count := 3
+	if opts.MaxPages > 0 && opts.MaxPages < count {
+		count = opts.MaxPages
+	}
+
+	pages := make([]*ScannedPage, 0, count)
+	for i := 1; i <= count; i++ {
+		page, err := generateSimulatedPage(i)
+		if err != nil {
+			return pages, err
+		}
+		pages = append(pages, page)
+		if onPageCallback != nil {
+			onPageCallback(page)
+		}
+	}
+	return pages, nil
 }

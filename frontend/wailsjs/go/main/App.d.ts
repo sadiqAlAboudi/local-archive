@@ -38,6 +38,8 @@ export function RotatePage(arg1:string,arg2:number):Promise<scanner.ScannedPage>
 
 export function SaveToPDF(arg1:Array<string>,arg2:string):Promise<string>;
 
+export function ScanFeeder(arg1:boolean,arg2:number):Promise<Array<scanner.ScannedPage>>;
+
 export function ScanPage():Promise<scanner.ScannedPage>;
 
 export function SelectDocumentFile():Promise<string>;

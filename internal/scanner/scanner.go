@@ -39,6 +39,12 @@ type ScannedPage struct {
 	Rotation int    `json:"rotation"`
 }
 
+// FeederScanOptions defines parameters for multi-page ADF (Automatic Document Feeder) scanning.
+type FeederScanOptions struct {
+	Duplex   bool `json:"duplex"`
+	MaxPages int  `json:"max_pages"`
+}
+
 var (
 	tempDirOnce sync.Once
 	tempDirRoot string

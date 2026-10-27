@@ -51,6 +51,31 @@ func TestScanPage(t *testing.T) {
 	}
 }
 
+func TestScanFeeder(t *testing.T) {
+	callbackCount := 0
+	pages, err := ScanFeeder(FeederScanOptions{Duplex: false, MaxPages: 2}, func(p *ScannedPage) {
+		callbackCount++
+		if p.TempPath == "" || p.Base64 == "" {
+			t.Errorf("received invalid ScannedPage in callback")
+		}
+	})
+	if err != nil {
+		t.Fatalf("ScanFeeder failed: %v", err)
+	}
+	defer func() {
+		for _, p := range pages {
+			DeleteTempScan(p.TempPath)
+		}
+	}()
+
+	if len(pages) != 2 {
+		t.Errorf("expected 2 pages, got %d", len(pages))
+	}
+	if callbackCount != 2 {
+		t.Errorf("expected callback to be called 2 times, got %d", callbackCount)
+	}
+}
+
 func TestRotatePage(t *testing.T) {
 	// Create an asymmetric image (300 wide, 150 high)
 	p := createTestImage(t, 300, 150, color.RGBA{0, 100, 200, 255})

@@ -76,6 +76,19 @@ func (a *App) ScanPage() (*scanner.ScannedPage, error) {
 	return scanner.ScanPage()
 }
 
+// ScanFeeder captures all pages from an Automatic Document Feeder (ADF),
+// emitting "scanner:page_scanned" events for real-time frontend updates.
+func (a *App) ScanFeeder(duplex bool, maxPages int) ([]*scanner.ScannedPage, error) {
+	return scanner.ScanFeeder(scanner.FeederScanOptions{
+		Duplex:   duplex,
+		MaxPages: maxPages,
+	}, func(page *scanner.ScannedPage) {
+		if a.ctx != nil {
+			runtime.EventsEmit(a.ctx, "scanner:page_scanned", page)
+		}
+	})
+}
+
 // RotatePage physically rotates a scanned image by degrees clockwise (90, 180, 270)
 // and returns the updated preview with swapped dimensions.
 func (a *App) RotatePage(tempPath string, degrees int) (*scanner.ScannedPage, error) {

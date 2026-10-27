@@ -354,4 +354,54 @@ func TestAppScanAndSaveToPDFAndCreateDocument(t *testing.T) {
 	}
 }
 
+func TestAppScanFeederBatch(t *testing.T) {
+	app, tempDir := setupTestApp(t)
+	defer os.RemoveAll(tempDir)
+	defer app.shutdown(context.TODO())
+
+	// 1. Scan batch via ADF Feeder
+	pages, err := app.ScanFeeder(false, 3)
+	if err != nil {
+		t.Fatalf("ScanFeeder failed: %v", err)
+	}
+	if len(pages) != 3 {
+		t.Fatalf("expected 3 pages from feeder, got %d", len(pages))
+	}
+
+	paths := make([]string, len(pages))
+	for i, p := range pages {
+		paths[i] = p.TempPath
+	}
+
+	// 2. Compile all 3 pages into PDF
+	pdfPath, err := app.SaveToPDF(paths, "feeder_batch.pdf")
+	if err != nil {
+		t.Fatalf("SaveToPDF for feeder batch failed: %v", err)
+	}
+	defer os.Remove(pdfPath)
+
+	// 3. Create document in SQLite
+	doc, err := app.CreateDocument(CreateDocumentInput{
+		DocType:      "incoming",
+		SerialNumber: "FEEDER-2026/01",
+		DocDate:      "2026-10-27",
+		Department:   "قسم الأرشيف المركزي",
+		LetterNumber: "900",
+		LetterDate:   "2026-10-26",
+		Subject:      "معاملة متعددة الصفحات مسحوبة من وحدة التغذية",
+		SourcePath:   pdfPath,
+	})
+	if err != nil {
+		t.Fatalf("CreateDocument failed: %v", err)
+	}
+
+	if doc.ID == 0 {
+		t.Errorf("expected valid ID for created document")
+	}
+	if doc.FileType != "pdf" {
+		t.Errorf("expected FileType to be 'pdf', got '%s'", doc.FileType)
+	}
+}
+
+
 
