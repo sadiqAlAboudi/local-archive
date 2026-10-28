@@ -1,12 +1,14 @@
 package scanner
 
 import (
+	"errors"
 	"image"
 	"image/color"
 	"image/draw"
 	"image/jpeg"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
@@ -176,5 +178,38 @@ func TestDeleteAndCleanupTempScans(t *testing.T) {
 	}
 	if _, err := os.Stat(p2); !os.IsNotExist(err) {
 		t.Errorf("file p2 should have been deleted")
+	}
+}
+
+func TestMapWIAError(t *testing.T) {
+	// Test WIA service / COM class not registered (0x800401F3)
+	errClassNotReg := MapWIAError("0x800401F3:Invalid class string", 1)
+	if errClassNotReg == nil {
+		t.Fatal("expected non-nil error for 0x800401F3")
+	}
+	if !strings.Contains(errClassNotReg.Error(), "WIA") {
+		t.Errorf("expected error message to mention WIA, got: %s", errClassNotReg.Error())
+	}
+
+	// Test user cancel
+	errCancel := MapWIAError("80210064", 1)
+	if !errors.Is(errCancel, ErrScanCanceled) {
+		t.Errorf("expected ErrScanCanceled, got: %v", errCancel)
+	}
+
+	// Test offline
+	errOffline := MapWIAError("80210015", 1)
+	if !strings.Contains(errOffline.Error(), "غير متصل") {
+		t.Errorf("expected offline error message, got: %s", errOffline.Error())
+	}
+
+	// Test default formatting stripping PowerShell At line / + lines
+	rawErr := "At line:25 char:32\n+ Some powershell command\nUnrecognized error message"
+	errDefault := MapWIAError(rawErr, 1)
+	if strings.Contains(errDefault.Error(), "At line:") || strings.Contains(errDefault.Error(), "+") {
+		t.Errorf("expected cleaned up error trace, got: %s", errDefault.Error())
+	}
+	if !strings.Contains(errDefault.Error(), "Unrecognized error message") {
+		t.Errorf("expected summary to contain unrecognized error message, got: %s", errDefault.Error())
 	}
 }

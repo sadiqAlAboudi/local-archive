@@ -103,7 +103,7 @@ try {
     if ($_.Exception -and $_.Exception.HResult) {
         $hresult = [System.String]::Format("0x{0:X8}", $_.Exception.HResult)
     }
-    Write-Output "STATUS:ERROR:$hresult:$($_.Exception.Message)"
+    Write-Output "STATUS:ERROR:${hresult}:$($_.Exception.Message)"
     exit 1
 }
 `, escapedTarget)

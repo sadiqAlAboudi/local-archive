@@ -309,6 +309,11 @@ func MapWIAError(errOutput string, exitCode int) error {
 		strings.Contains(lower, "8021001a"):
 		return errors.New("لم يتم العثور على أي ماسح ضوئي متصل بهذا الحاسوب. يرجى التأكد من توصيل الجهاز وتثبيت تعريفه.")
 
+	case strings.Contains(lower, "800401f3") ||
+		strings.Contains(lower, "invalid class string") ||
+		strings.Contains(lower, "regdb_e_classnotreg"):
+		return errors.New("تعذر تشغيل خدمة الماسح الضوئي (WIA). يرجى التأكد من تشغيل خدمة Windows Image Acquisition في إدارة الخدمات، وإعادة تثبيت تعريف الماسح إذا استمرت المشكلة.")
+
 	default:
 		// Clean technical error trace for readability
 		lines := strings.Split(errOutput, "\n")
