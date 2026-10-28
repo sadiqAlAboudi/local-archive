@@ -158,6 +158,22 @@ export async function startUpdate() {
 
 // Setup update event listeners
 export function setupUpdateListeners() {
+  // Query active app version from backend and update UI
+  if (window.go && window.go.main && window.go.main.App && window.go.main.App.GetAppVersion) {
+    window.go.main.App.GetAppVersion().then((ver) => {
+      if (ver) {
+        const currentVerLabel = document.getElementById("update-current-version-label");
+        if (currentVerLabel) {
+          currentVerLabel.textContent = `الإصدار الحالي: ${ver}`;
+        }
+        const appVerBadge = document.getElementById("app-version-badge");
+        if (appVerBadge) {
+          appVerBadge.textContent = `v${ver}`;
+        }
+      }
+    }).catch((err) => console.warn("Failed to get app version:", err));
+  }
+
   const btnCheckUpdate = document.getElementById("btn-check-update");
   if (btnCheckUpdate) {
     btnCheckUpdate.addEventListener("click", () => checkForUpdates(false));

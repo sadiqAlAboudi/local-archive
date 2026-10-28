@@ -26,7 +26,13 @@ func RunInstallerAndExit(installerPath string) error {
 	batchScript := `@echo off
 chcp 65001 >nul
 ping 127.0.0.1 -n 3 >nul
-start /wait "" "%~1" /S
+set "TARGET_DIR=%~dp2"
+if "%TARGET_DIR:~-1%"=="\" set "TARGET_DIR=%TARGET_DIR:~0,-1%"
+if exist "%TARGET_DIR%" (
+    start /wait "" "%~1" /S /D=%TARGET_DIR%
+) else (
+    start /wait "" "%~1" /S
+)
 if exist "%~2" (
     start "" "%~2"
 )

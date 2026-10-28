@@ -37,6 +37,20 @@ jobs:
         run: |
           go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
+      - name: Sync Release Version
+        shell: bash
+        run: |
+          TAG="${{ github.event.inputs.tag_name || github.ref_name }}"
+          VERSION="${TAG#v}"
+          VERSION="${VERSION#V}"
+          echo "Building release version: $VERSION"
+          # Update version.go
+          sed -i 's/var CurrentVersion = ".*"/var CurrentVersion = "'"$VERSION"'"/' internal/updater/version.go
+          # Update wails.json
+          sed -i 's/"productVersion": ".*"/"productVersion": "'"$VERSION"'"/' wails.json
+          # Update wails_tools.nsh
+          sed -i 's/!define INFO_PRODUCTVERSION ".*"/!define INFO_PRODUCTVERSION "'"$VERSION"'"/' build/windows/installer/wails_tools.nsh
+
       - name: Prepare Bundled NAPS2 Scanner Engine
         run: |
           mkdir -p build/bin/naps2
@@ -46,7 +60,10 @@ jobs:
 
       - name: Build Windows Executable and NSIS Installer
         run: |
-          wails build -platform windows/amd64 -nsis
+          TAG="${{ github.event.inputs.tag_name || github.ref_name }}"
+          VERSION="${TAG#v}"
+          VERSION="${VERSION#V}"
+          wails build -platform windows/amd64 -nsis -ldflags "-X local-archive/internal/updater.CurrentVersion=$VERSION"
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
