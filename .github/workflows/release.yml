@@ -61,38 +61,8 @@ jobs:
           fi
           echo "Downloading NAPS2 from: $NAPS2_URL"
           curl -fsSL -o naps2.zip "$NAPS2_URL"
-          python3 -c "
-import zipfile, os, shutil
-os.makedirs('naps2_temp', exist_ok=True)
-with zipfile.ZipFile('naps2.zip', 'r') as zf:
-    for info in zf.infolist():
-        clean_name = info.filename.replace('\\\\', '/').lstrip('/')
-        target = os.path.join('naps2_temp', clean_name)
-        if info.is_dir() or clean_name.endswith('/'):
-            os.makedirs(target, exist_ok=True)
-        else:
-            os.makedirs(os.path.dirname(target), exist_ok=True)
-            with zf.open(info) as src, open(target, 'wb') as dst:
-                dst.write(src.read())
-console_dir = None
-for root, dirs, files in os.walk('naps2_temp'):
-    if 'NAPS2.Console.exe' in files:
-        console_dir = root
-        break
-if not console_dir:
-    raise RuntimeError('NAPS2.Console.exe not found in extracted archive!')
-os.makedirs('build/bin/naps2', exist_ok=True)
-for item in os.listdir(console_dir):
-    s = os.path.join(console_dir, item)
-    d = os.path.join('build/bin/naps2', item)
-    if os.path.isdir(s):
-        shutil.copytree(s, d, dirs_exist_ok=True)
-    else:
-        shutil.copy2(s, d)
-shutil.rmtree('naps2_temp')
-os.remove('naps2.zip')
-print('NAPS2 successfully unpacked to build/bin/naps2')
-"
+          python3 build/extract_naps2.py naps2.zip build/bin/naps2
+          rm -f naps2.zip
           ls -la build/bin/naps2/ | head -n 15
 
       - name: Build Windows Executable and NSIS Installer
