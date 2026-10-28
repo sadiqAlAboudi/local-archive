@@ -52,11 +52,24 @@ jobs:
           sed -i 's/!define INFO_PRODUCTVERSION ".*"/!define INFO_PRODUCTVERSION "'"$VERSION"'"/' build/windows/installer/wails_tools.nsh
 
       - name: Prepare Bundled NAPS2 Scanner Engine
+        shell: bash
         run: |
           mkdir -p build/bin/naps2
-          curl -fsSL -o naps2.zip https://github.com/cyanfish/naps2/releases/download/v7.5.3/naps2-7.5.3-win-x64.zip
-          unzip -q naps2.zip -d build/bin/naps2/
-          rm -f naps2.zip
+          mkdir -p naps2_temp
+          NAPS2_URL=$(curl -s "https://api.github.com/repos/cyanfish/naps2/releases/latest" | grep -o 'https://[^"]*naps2-[^"]*-win-x64\.zip' | head -n 1)
+          if [ -z "$NAPS2_URL" ]; then
+            NAPS2_URL="https://github.com/cyanfish/naps2/releases/download/v8.6.0/naps2-8.6.0-win-x64.zip"
+          fi
+          echo "Downloading NAPS2 from: $NAPS2_URL"
+          curl -fsSL -o naps2.zip "$NAPS2_URL"
+          unzip -q naps2.zip -d naps2_temp
+          if [ -f naps2_temp/NAPS2.Console.exe ]; then
+            cp -r naps2_temp/* build/bin/naps2/
+          else
+            cp -r naps2_temp/*/* build/bin/naps2/
+          fi
+          rm -rf naps2.zip naps2_temp
+          ls -la build/bin/naps2/ | head -n 15
 
       - name: Build Windows Executable and NSIS Installer
         run: |
