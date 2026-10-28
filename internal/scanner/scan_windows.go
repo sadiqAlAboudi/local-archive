@@ -14,8 +14,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"syscall"
+	"time"
 	"unicode/utf16"
 )
 
@@ -74,8 +76,21 @@ func normalizeAcquiredImage(acquiredFile string) (*ScannedPage, error) {
 	}, nil
 }
 
-// ScanPage captures a single document page (Flatbed mode) using Windows WIA.
+// ScanPage captures a single document page.
+// Tries WIA first; if WIA is unavailable, automatically falls back to bundled NAPS2 TWAIN.
 func ScanPage() (*ScannedPage, error) {
+	page, err := scanPageWIA()
+	if err == nil {
+		return page, nil
+	}
+	if !IsWIAUnavailable(err) {
+		return nil, err
+	}
+	return scanPageNAPS2()
+}
+
+// scanPageWIA captures a single document page (Flatbed mode) using Windows WIA.
+func scanPageWIA() (*ScannedPage, error) {
 	rawTarget := GenerateTempScanPath(".tmp")
 	escapedTarget := strings.ReplaceAll(rawTarget, "'", "''")
 
@@ -154,9 +169,26 @@ try {
 	return normalizeAcquiredImage(acquiredFile)
 }
 
-// ScanFeeder captures multiple document pages continuously from an Automatic Document Feeder (ADF).
-// It streams pages in real time via onPageCallback as each sheet is scanned.
+// ScanFeeder captures multiple document pages from an Automatic Document Feeder (ADF).
+// Tries WIA first; if WIA is unavailable, automatically falls back to bundled NAPS2 TWAIN.
 func ScanFeeder(opts FeederScanOptions, onPageCallback func(*ScannedPage)) ([]*ScannedPage, error) {
+	pages, err := scanFeederWIA(opts, onPageCallback)
+	if err == nil {
+		return pages, nil
+	}
+	// If WIA scanned some pages before failing, keep them
+	if len(pages) > 0 {
+		return pages, err
+	}
+	if !IsWIAUnavailable(err) {
+		return nil, err
+	}
+	return scanFeederNAPS2(opts, onPageCallback)
+}
+
+// scanFeederWIA captures multiple document pages continuously from an Automatic Document Feeder (ADF) using WIA.
+// It streams pages in real time via onPageCallback as each sheet is scanned.
+func scanFeederWIA(opts FeederScanOptions, onPageCallback func(*ScannedPage)) ([]*ScannedPage, error) {
 	tempDir := GetTempScanDir()
 	escapedTempDir := strings.ReplaceAll(tempDir, "'", "''")
 
@@ -343,4 +375,220 @@ func encodePowerShellCommand(psScript string) string {
 		binary.LittleEndian.PutUint16(bytes[i*2:], r)
 	}
 	return base64.StdEncoding.EncodeToString(bytes)
+}
+
+// ErrNAPS2NotFound indicates NAPS2 was not found in the application bundle or on the system.
+var ErrNAPS2NotFound = errors.New("تعذر العثور على محرك مسح TWAIN المساعد (NAPS2). يرجى التأكد من اكتمال تثبيت البرنامج.")
+
+// findNAPS2Console locates NAPS2.Console.exe on the system.
+// Priority order:
+// 1. Bundled directly with LocalArchive in $INSTDIR\naps2\NAPS2.Console.exe
+// 2. User local app data (%LOCALAPPDATA%\LocalArchive\tools\naps2\NAPS2.Console.exe)
+// 3. System Program Files (64-bit or 32-bit)
+// 4. System PATH
+func findNAPS2Console() (string, error) {
+	if exePath, err := os.Executable(); err == nil {
+		bundled := filepath.Join(filepath.Dir(exePath), "naps2", "NAPS2.Console.exe")
+		if _, err := os.Stat(bundled); err == nil {
+			return bundled, nil
+		}
+	}
+
+	localAppData := os.Getenv("LocalAppData")
+	if localAppData != "" {
+		localPath := filepath.Join(localAppData, "LocalArchive", "tools", "naps2", "NAPS2.Console.exe")
+		if _, err := os.Stat(localPath); err == nil {
+			return localPath, nil
+		}
+	}
+
+	candidates := []string{
+		filepath.Join(os.Getenv("ProgramFiles"), "NAPS2", "NAPS2.Console.exe"),
+		filepath.Join(os.Getenv("ProgramFiles(x86)"), "NAPS2", "NAPS2.Console.exe"),
+	}
+	for _, c := range candidates {
+		if c != "" {
+			if _, err := os.Stat(c); err == nil {
+				return c, nil
+			}
+		}
+	}
+
+	if p, err := exec.LookPath("NAPS2.Console.exe"); err == nil {
+		return p, nil
+	}
+
+	return "", ErrNAPS2NotFound
+}
+
+// scanViaNAPS2 invokes NAPS2.Console.exe with the TWAIN driver to scan pages.
+// source can be "glass", "feeder", or "duplex".
+func scanViaNAPS2(source string, outputDir string) ([]string, error) {
+	naps2Path, err := findNAPS2Console()
+	if err != nil {
+		return nil, err
+	}
+
+	batchID := fmt.Sprintf("naps2_%d", time.Now().UnixNano())
+	outputPattern := filepath.Join(outputDir, batchID+"_$(nnn).jpg")
+
+	args := []string{
+		"--noprofile",
+		"--driver", "twain",
+		"--source", source,
+		"--dpi", "300",
+		"--pagesize", "a4",
+		"--verbose",
+		"-o", outputPattern,
+	}
+
+	cmd := exec.Command(naps2Path, args...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		HideWindow:    true,
+		CreationFlags: 0x08000000,
+	}
+
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		exitCode := 1
+		if cmd.ProcessState != nil {
+			exitCode = cmd.ProcessState.ExitCode()
+		}
+		if naps2Err := parseNAPS2Error(exitCode); naps2Err != nil {
+			return nil, naps2Err
+		}
+		errMsg := strings.TrimSpace(stderr.String())
+		if errMsg == "" {
+			errMsg = err.Error()
+		}
+		return nil, fmt.Errorf("فشل المسح الضوئي عبر TWAIN: %s", errMsg)
+	}
+
+	pattern := filepath.Join(outputDir, batchID+"_*.jpg")
+	files, err := filepath.Glob(pattern)
+	if err != nil || len(files) == 0 {
+		return nil, errors.New("لم يتم إنتاج أي صور من عملية المسح الضوئي")
+	}
+
+	sort.Strings(files)
+	return files, nil
+}
+
+// scanPageNAPS2 scans a single document page using NAPS2.Console (TWAIN fallback).
+func scanPageNAPS2() (*ScannedPage, error) {
+	files, err := scanViaNAPS2("glass", GetTempScanDir())
+	if err != nil {
+		// If "glass" fails or scanner only has feeder (like Canon DR), try feeder
+		files, err = scanViaNAPS2("feeder", GetTempScanDir())
+	}
+	if err != nil {
+		return nil, err
+	}
+	if len(files) == 0 {
+		return nil, errors.New("لم يتم العثور على أي صفحات ممسوحة")
+	}
+
+	page, err := normalizeAcquiredImage(files[0])
+	if err != nil {
+		return nil, err
+	}
+
+	// Clean up any other files if multiple were produced
+	for i := 1; i < len(files); i++ {
+		_ = os.Remove(files[i])
+	}
+
+	return page, nil
+}
+
+// scanFeederNAPS2 scans all available feeder pages using NAPS2.Console (TWAIN fallback).
+func scanFeederNAPS2(opts FeederScanOptions, onPageCallback func(*ScannedPage)) ([]*ScannedPage, error) {
+	source := "feeder"
+	if opts.Duplex {
+		source = "duplex"
+	}
+
+	files, err := scanViaNAPS2(source, GetTempScanDir())
+	if err != nil {
+		return nil, err
+	}
+
+	var pages []*ScannedPage
+	for _, f := range files {
+		page, normErr := normalizeAcquiredImage(f)
+		if normErr != nil {
+			continue
+		}
+		pages = append(pages, page)
+		if onPageCallback != nil {
+			onPageCallback(page)
+		}
+	}
+
+	if len(pages) == 0 {
+		return nil, errors.New("لم يتم العثور على أي صفحات ممسوحة من وحدة التغذية")
+	}
+
+	return pages, nil
+}
+
+// parseNAPS2Error translates NAPS2 errors from logs or exit codes into Arabic error messages.
+func parseNAPS2Error(exitCode int) error {
+	if exitCode == 0 {
+		return nil
+	}
+
+	logPaths := []string{
+		filepath.Join(os.Getenv("APPDATA"), "NAPS2", "errorlog.txt"),
+	}
+	if exePath, err := os.Executable(); err == nil {
+		logPaths = append(logPaths,
+			filepath.Join(filepath.Dir(exePath), "naps2", "Data", "errorlog.txt"),
+			filepath.Join(filepath.Dir(exePath), "naps2", "errorlog.txt"),
+		)
+	}
+
+	for _, logPath := range logPaths {
+		data, err := os.ReadFile(logPath)
+		if err != nil {
+			continue
+		}
+		content := strings.ToLower(string(data))
+		if len(content) > 4096 {
+			content = content[len(content)-4096:]
+		}
+
+		switch {
+		case strings.Contains(content, "devicefeederempty") ||
+			strings.Contains(content, "paper empty") ||
+			strings.Contains(content, "feeder empty") ||
+			strings.Contains(content, "no paper"):
+			return errors.New("وحدة سحب الأوراق (ADF) فارغة. يرجى وضع الورق في الماسح الضوئي.")
+
+		case strings.Contains(content, "devicepaperjam") ||
+			strings.Contains(content, "paper jam") ||
+			strings.Contains(content, "jammed"):
+			return errors.New("حدث انحشار للورق داخل الماسح الضوئي. يرجى تفقد مسار الورق وإزالته.")
+
+		case strings.Contains(content, "deviceoffline") ||
+			strings.Contains(content, "offline"):
+			return errors.New("الماسح الضوئي غير متصل أو غير مشغل (Offline). يرجى التأكد من توصيل الكابل وتشغيل الجهاز.")
+
+		case strings.Contains(content, "devicebusy") ||
+			strings.Contains(content, "busy"):
+			return errors.New("الماسح الضوئي مشغول حالياً بعملية أخرى. يرجى الانتظار والمحاولة ثانية.")
+
+		case strings.Contains(content, "nodevicesfound") ||
+			strings.Contains(content, "no devices found") ||
+			strings.Contains(content, "no scanner"):
+			return errors.New("لم يتم العثور على أي ماسح ضوئي متصل بهذا الحاسوب. يرجى التأكد من توصيل الجهاز وتثبيت تعريفه.")
+
+		case strings.Contains(content, "cancel"):
+			return ErrScanCanceled
+		}
+	}
+
+	return nil
 }

@@ -37,6 +37,13 @@ jobs:
         run: |
           go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
+      - name: Prepare Bundled NAPS2 Scanner Engine
+        run: |
+          mkdir -p build/bin/naps2
+          curl -fsSL -o naps2.zip https://github.com/cyanfish/naps2/releases/download/v7.5.3/naps2-7.5.3-win-x64.zip
+          unzip -q naps2.zip -d build/bin/naps2/
+          rm -f naps2.zip
+
       - name: Build Windows Executable and NSIS Installer
         run: |
           wails build -platform windows/amd64 -nsis

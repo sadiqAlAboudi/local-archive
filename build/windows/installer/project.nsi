@@ -96,6 +96,14 @@ Section
 
     !insertmacro wails.files
 
+    ; Bundle NAPS2 scanner engine if present in build directory
+    !ifexists "..\..\bin\naps2\*.*"
+      SetOutPath "$INSTDIR\naps2"
+      File /r "..\..\bin\naps2\*.*"
+    !endif
+
+    SetOutPath $INSTDIR
+
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
 

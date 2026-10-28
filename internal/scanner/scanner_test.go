@@ -213,3 +213,31 @@ func TestMapWIAError(t *testing.T) {
 		t.Errorf("expected summary to contain unrecognized error message, got: %s", errDefault.Error())
 	}
 }
+
+func TestIsWIAUnavailable(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		expected bool
+	}{
+		{"nil error", nil, false},
+		{"scan canceled", ErrScanCanceled, false},
+		{"random paper jam", errors.New("حدث انحشار للورق"), false},
+		{"COM class not registered 800401f3", errors.New("0x800401F3: Invalid class string"), true},
+		{"COM class not registered 80040154", errors.New("80040154 class not registered"), true},
+		{"WIA no device 8021001a", errors.New("8021001a: no device"), true},
+		{"Arabic no device found", errors.New("لم يتم العثور على أي ماسح ضوئي متصل"), true},
+		{"Arabic WIA service fail", errors.New("تعذر تشغيل خدمة الماسح الضوئي (WIA)"), true},
+		{"WIA CommonDialog failed", errors.New("New-Object : Retrieving the COM class factory for component with CLSID {E1C5D730-...} failed due to following error: 80040154"), true},
+		{"unrelated error", errors.New("disk full"), false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := IsWIAUnavailable(tt.err)
+			if got != tt.expected {
+				t.Errorf("IsWIAUnavailable(%v) = %v, want %v", tt.err, got, tt.expected)
+			}
+		})
+	}
+}

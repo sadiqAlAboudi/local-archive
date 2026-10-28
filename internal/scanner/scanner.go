@@ -331,3 +331,27 @@ func MapWIAError(errOutput string, exitCode int) error {
 		return fmt.Errorf("خطأ أثناء الاتصال بالماسح الضوئي: %s", summary)
 	}
 }
+
+// IsWIAUnavailable returns true if the error indicates the WIA COM subsystem
+// is not available on this machine (e.g., COM class not registered, no WIA devices found).
+// This signals that the system should fall back to TWAIN/NAPS2.
+func IsWIAUnavailable(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, ErrScanCanceled) {
+		return false
+	}
+	s := strings.ToLower(err.Error())
+	return strings.Contains(s, "800401f3") ||
+		strings.Contains(s, "invalid class string") ||
+		strings.Contains(s, "regdb_e_classnotreg") ||
+		strings.Contains(s, "80040154") ||
+		strings.Contains(s, "class not registered") ||
+		strings.Contains(s, "8021001a") ||
+		strings.Contains(s, "no device") ||
+		strings.Contains(s, "لم يتم العثور على أي ماسح") ||
+		strings.Contains(s, "تعذر تشغيل خدمة الماسح الضوئي") ||
+		strings.Contains(s, "wia.commondialog") ||
+		strings.Contains(s, "wia.devicemanager")
+}
