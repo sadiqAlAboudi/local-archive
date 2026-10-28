@@ -55,20 +55,44 @@ jobs:
         shell: bash
         run: |
           mkdir -p build/bin/naps2
-          mkdir -p naps2_temp
           NAPS2_URL=$(curl -s "https://api.github.com/repos/cyanfish/naps2/releases/latest" | grep -o 'https://[^"]*naps2-[^"]*-win-x64\.zip' | head -n 1)
           if [ -z "$NAPS2_URL" ]; then
             NAPS2_URL="https://github.com/cyanfish/naps2/releases/download/v8.6.0/naps2-8.6.0-win-x64.zip"
           fi
           echo "Downloading NAPS2 from: $NAPS2_URL"
           curl -fsSL -o naps2.zip "$NAPS2_URL"
-          unzip -q naps2.zip -d naps2_temp
-          if [ -f naps2_temp/NAPS2.Console.exe ]; then
-            cp -r naps2_temp/* build/bin/naps2/
-          else
-            cp -r naps2_temp/*/* build/bin/naps2/
-          fi
-          rm -rf naps2.zip naps2_temp
+          python3 -c "
+import zipfile, os, shutil
+os.makedirs('naps2_temp', exist_ok=True)
+with zipfile.ZipFile('naps2.zip', 'r') as zf:
+    for info in zf.infolist():
+        clean_name = info.filename.replace('\\\\', '/').lstrip('/')
+        target = os.path.join('naps2_temp', clean_name)
+        if info.is_dir() or clean_name.endswith('/'):
+            os.makedirs(target, exist_ok=True)
+        else:
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            with zf.open(info) as src, open(target, 'wb') as dst:
+                dst.write(src.read())
+console_dir = None
+for root, dirs, files in os.walk('naps2_temp'):
+    if 'NAPS2.Console.exe' in files:
+        console_dir = root
+        break
+if not console_dir:
+    raise RuntimeError('NAPS2.Console.exe not found in extracted archive!')
+os.makedirs('build/bin/naps2', exist_ok=True)
+for item in os.listdir(console_dir):
+    s = os.path.join(console_dir, item)
+    d = os.path.join('build/bin/naps2', item)
+    if os.path.isdir(s):
+        shutil.copytree(s, d, dirs_exist_ok=True)
+    else:
+        shutil.copy2(s, d)
+shutil.rmtree('naps2_temp')
+os.remove('naps2.zip')
+print('NAPS2 successfully unpacked to build/bin/naps2')
+"
           ls -la build/bin/naps2/ | head -n 15
 
       - name: Build Windows Executable and NSIS Installer
