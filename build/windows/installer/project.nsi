@@ -97,10 +97,8 @@ Section
     !insertmacro wails.files
 
     ; Bundle NAPS2 scanner engine if present in build directory
-    !ifexists "..\..\bin\naps2\*.*"
-      SetOutPath "$INSTDIR\naps2"
-      File /r "..\..\bin\naps2\*.*"
-    !endif
+    SetOutPath "$INSTDIR\naps2"
+    File /nonfatal /r "..\..\bin\naps2\*.*"
 
     SetOutPath $INSTDIR
 
