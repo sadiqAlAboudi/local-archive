@@ -41,6 +41,38 @@ def extract_naps2(zip_path, output_dir):
     shutil.rmtree(temp_dir, ignore_errors=True)
     print(f"NAPS2 successfully unpacked to {output_dir}")
 
+    # Prune unneeded heavy components (OCR, PDF rendering, GUI, unused language packs)
+    prune_unneeded_files(output_dir)
+
+def prune_unneeded_files(output_dir):
+    unneeded = [
+        os.path.join("lib", "_win64", "tesseract.exe"),
+        os.path.join("lib", "_win64", "pdfium.dll"),
+        os.path.join("lib", "NAPS2.Tesseract.Binaries.dll"),
+        os.path.join("lib", "NAPS2.Pdfium.Binaries.dll"),
+        "NAPS2.exe",
+        "contributors.txt",
+    ]
+    removed_bytes = 0
+    for rel in unneeded:
+        p = os.path.join(output_dir, rel)
+        if os.path.exists(p):
+            removed_bytes += os.path.getsize(p)
+            os.remove(p)
+
+    lib_dir = os.path.join(output_dir, "lib")
+    if os.path.isdir(lib_dir):
+        for entry in os.listdir(lib_dir):
+            entry_path = os.path.join(lib_dir, entry)
+            # Remove localization subdirectories except Arabic
+            if os.path.isdir(entry_path) and not entry.startswith("_") and entry != "ar":
+                for root, _, files in os.walk(entry_path):
+                    for f in files:
+                        removed_bytes += os.path.getsize(os.path.join(root, f))
+                shutil.rmtree(entry_path, ignore_errors=True)
+
+    print(f"Pruned unneeded NAPS2 components ({removed_bytes / (1024 * 1024):.1f} MB saved uncompressed)")
+
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print("Usage: extract_naps2.py <zip_path> <output_dir>")

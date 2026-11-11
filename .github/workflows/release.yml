@@ -70,7 +70,7 @@ jobs:
           TAG="${{ github.event.inputs.tag_name || github.ref_name }}"
           VERSION="${TAG#v}"
           VERSION="${VERSION#V}"
-          wails build -platform windows/amd64 -nsis -ldflags "-X local-archive/internal/updater.CurrentVersion=$VERSION"
+          wails build -platform windows/amd64 -nsis -ldflags "-s -w -X local-archive/internal/updater.CurrentVersion=$VERSION"
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
